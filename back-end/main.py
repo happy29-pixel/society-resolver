@@ -8,10 +8,10 @@ from models import RegisterIn, ComplaintIn
 from firestore_service import init_firebase, FirestoreService
 import json
 
-# init firebase admin client (expects serviceAccountKey.json in back-end or env var)
-SERVICE_ACCOUNT = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", "serviceAccountKey.json")
-db = init_firebase(SERVICE_ACCOUNT)
-fs = FirestoreService(db)
+# # init firebase admin client (expects serviceAccountKey.json in back-end or env var)
+# SERVICE_ACCOUNT = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", "serviceAccountKey.json")
+# db = init_firebase(SERVICE_ACCOUNT)
+# fs = FirestoreService(db)
 
 app = FastAPI(title="Society Resolver API")
 
