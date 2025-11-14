@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Worker Dashboard - Krishnanagar Society</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #eef1f7;
+    }
+
+    header {
+      background-color: #003366;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .dashboard {
+      max-width: 1100px;
+      margin: 40px auto;
+      background-color: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      text-align: center;
+      color: #003366;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 30px;
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: center;
+      border: 1px solid #ccc;
+    }
+
+    th {
+      background-color: #003366;
+      color: white;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    button {
+      padding: 6px 12px;
+      background-color: #003366;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #002244;
+    }
+
+    footer {
+      background-color: #003366;
+      color: white;
+      text-align: center;
+      padding: 10px;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      margin-top: 50px;
+      z-index: 5;
+    }
+    .logout-btn {
+      background-color: #e74c3c;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .logout-btn:hover {
+      background-color: #c0392b;
+    }
+
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Worker Dashboard - Krishnanagar Society</h1>
+  <button id="logoutBtn" class="logout-btn">Logout</button>
+
+</header>
+
+<div class="dashboard">
+  <h2>Assigned Complaints</h2>
+
+  <table id="complaintTable">
+    <thead>
+      <tr>
+        <th>Complaint ID</th>
+        <th>Category</th>
+        <th>Description</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td colspan="5" style="text-align:center;">Loading complaints...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<footer>
+  &copy; 2025 Krishnanagar Society | Worker Panel
+</footer>
+
+<script type="module">
+  // 🔹 Import Firebase
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+  import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+
+  // 🔹 Firebase config (⚠️ replace with your actual config)
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_AUTH_DOMAIN",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_STORAGE_BUCKET",
+    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+    appId: "YOUR_APP_ID",
+  };
+
+  // ✅ Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  // ✅ Worker ID from login
+  const WORKER_ID = localStorage.getItem("uid");
+  const ID_TOKEN = localStorage.getItem("idToken"); // stored at login
+  console.log("👷 Worker UID:", WORKER_ID);
+
+  // ============================================================
+  // 📋 Load Complaints Assigned to This Worker
+  // ============================================================
+  async function loadComplaints() {
+    const tbody = document.querySelector("#complaintTable tbody");
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Loading...</td></tr>`;
+
+    try {
+      const res = await fetch("http://127.0.0.1:8000/complaints");
+      const data = await res.json();
+
+      if (!res.ok) {
+        tbody.innerHTML = `<tr><td colspan="5" style="color:red;">Error fetching complaints</td></tr>`;
+        return;
+      }
+
+      const complaints = data.complaints || [];
+      const assigned = complaints.filter(c => c.assigned_to === WORKER_ID);
+
+      if (assigned.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">No complaints assigned to you</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = assigned.map(c => `
+        <tr>
+          <td>${c.id}</td>
+          <td>${c.category}</td>
+          <td>${c.description}</td>
+          <td>${c.status}</td>
+          <td>
+            ${
+              c.status.toLowerCase() === "open"
+                ? `<button onclick="updateStatus('${c.id}', 'in_progress')">Mark In Progress</button>`
+                : c.status.toLowerCase() === "in_progress"
+                ? `<button onclick="updateStatus('${c.id}', 'resolved')">Mark Resolved</button>`
+                : `<span style='color:green;font-weight:bold;'>Resolved</span>`
+            }
+          </td>
+        </tr>
+      `).join("");
+    } catch (err) {
+      console.error("❌ Error loading complaints:", err);
+      tbody.innerHTML = `<tr><td colspan="5" style="color:red;">Error loading complaints</td></tr>`;
+    }
+  }
+
+  // ============================================================
+  // 🛠️ Update Complaint Status (with Firebase Auth)
+  // ============================================================
+  async function updateStatus(id, status) {
+    const token = localStorage.getItem("idToken");
+
+    if (!token) {
+      alert("You are not logged in. Please log in again.");
+      window.location.href = "login.html";
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `http://127.0.0.1:8000/complaints/${id}/status?status=${status}`,
+        {
+          method: "PUT",
+          headers: {
+            "Authorization": `Bearer ${token}`, // ✅ send ID token to backend
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error("Backend response:", errText);
+        alert("❌ Failed to update status. Please check backend or token.");
+        return;
+      }
+
+      alert(`✅ Complaint ${id} marked as ${status.replace("_", " ")}!`);
+      loadComplaints();
+    } catch (err) {
+      console.error("❌ Error updating status:", err);
+      alert("Error updating complaint.");
+    }
+  }
+
+  // ✅ Expose updateStatus globally (for inline buttons)
+  window.updateStatus = updateStatus;
+
+  // ============================================================
+  // 🚪 Logout Function
+  // ============================================================
+  document.getElementById("logoutBtn").addEventListener("click", async () => {
+    try {
+      await signOut(auth);
+      localStorage.clear();
+      window.location.href = "login.html";
+      console.log("✅ Logged out successfully");
+    } catch (error) {
+      console.error("❌ Logout failed:", error);
+      alert("Logout failed: " + error.message);
+    }
+  });
+
+  // ============================================================
+  // 🚀 On Page Load
+  // ============================================================
+  window.addEventListener("DOMContentLoaded", () => {
+    if (!WORKER_ID) {
+      alert("No worker ID found. Please log in again.");
+      window.location.href = "login.html";
+    } else {
+      loadComplaints();
+    }
+  });
+</script>
+
+
+
+</body>
+</html>

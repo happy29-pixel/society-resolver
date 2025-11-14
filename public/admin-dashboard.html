@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Admin Dashboard - Krishnanagar Society</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: 'Segoe UI', sans-serif;
+        background-color: #eef1f7;
+      }
+
+      header {
+        background-color: #003366;
+        color: white;
+        padding: 20px;
+        text-align: center;
+      }
+
+      .dashboard {
+        max-width: 1200px;
+        margin: 40px auto;
+        padding: 30px;
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      }
+
+      h2 {
+        color: #003366;
+        text-align: center;
+      }
+
+      .actions {
+        margin: 20px 0;
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+      }
+
+      .card {
+        flex: 1;
+        margin: 10px;
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-left: 6px solid #003366;
+        border-radius: 8px;
+      }
+
+      .card h3 {
+        margin: 0 0 10px;
+        color: #003366;
+      }
+
+      .card p {
+        margin: 0;
+        color: #333;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 30px;
+      }
+
+      th, td {
+        padding: 12px;
+        border: 1px solid #ccc;
+        text-align: center;
+      }
+
+      th {
+        background-color: #003366;
+        color: white;
+      }
+
+      tr:nth-child(even) {
+        background-color: #f2f2f2;
+      }
+
+      button {
+        padding: 6px 10px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      .assign-btn {
+        background-color: #28a745;
+        color: white;
+      }
+
+      footer {
+        background-color: #003366;
+        color: white;
+        text-align: center;
+        padding: 10px;
+        margin-top: 50px;
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+        z-index: 5;
+      }
+      .logout-btn {
+        background-color: #e74c3c;
+        color: white;
+        border: none;
+        padding: 10px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+      }
+
+      .logout-btn:hover {
+        background-color: #c0392b;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Admin Dashboard - Krishnanagar Society</h1>
+      <button id="logoutBtn" class="logout-btn">Logout</button>
+    </header>
+
+    <div class="dashboard">
+      <h2>Welcome, Admin</h2>
+
+      <div class="actions">
+        <div class="card">
+          <h3>Total Complaints</h3>
+          <p id="totalCount">0</p>
+        </div>
+        <div class="card">
+          <h3>Open Complaints</h3>
+          <p id="openCount">0</p>
+        </div>
+        <div class="card">
+          <h3>Resolved Complaints</h3>
+          <p id="resolvedCount">0</p>
+        </div>
+      </div>
+
+      <h2>All Complaints</h2>
+
+      <table id="table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>User</th>
+            <th>Category</th>
+            <th>Description</th>
+            <th>Status</th>
+            <th>Date</th>
+            <th>Assign</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <footer>
+      &copy; 2025 Krishnanagar Society | Admin Panel
+    </footer>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+
+    // ✅ Your Firebase config
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_STORAGE_BUCKET",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    // ✅ Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // ✅ Load complaints (Admin dashboard)
+    async function load() {
+      const tbody = document.querySelector("#table tbody");
+      tbody.innerHTML = "<tr><td colspan='7' style='text-align:center;'>Loading...</td></tr>";
+
+      try {
+        const res = await fetch("http://127.0.0.1:8000/complaints");
+        const data = await res.json();
+        const complaints = data.complaints || [];
+
+        if (complaints.length === 0) {
+          tbody.innerHTML = "<tr><td colspan='7' style='text-align:center;'>No complaints found.</td></tr>";
+          return;
+        }
+
+        // ✅ Update dashboard stats
+        document.getElementById("totalCount").innerText = complaints.length;
+        document.getElementById("openCount").innerText = complaints.filter(c => c.status === "open").length;
+        document.getElementById("resolvedCount").innerText = complaints.filter(c => c.status === "resolved").length;
+
+        tbody.innerHTML = "";
+
+        for (const c of complaints) {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${c.id || "—"}</td>
+            <td>${c.name || "—"}</td>
+            <td>${c.category || "—"}</td>
+            <td>${c.description || "—"}</td>
+            <td style="font-weight:bold; color:${
+              c.status === "open" ? "red" :
+              c.status === "resolved" ? "green" : "orange"
+            }">${c.status}</td>
+            <td>${c.date || "—"}</td>
+            <td>
+              ${c.status === "resolved"
+                ? "-"
+                : `<button class="assign-btn" onclick="openAssign('${c.id}','${(c.category || '').replace(/'/g,'')}')">Assign</button>`
+              }
+            </td>`;
+          tbody.appendChild(tr);
+        }
+      } catch (err) {
+        console.error(err);
+        tbody.innerHTML = "<tr><td colspan='7' style='color:red;text-align:center;'>Failed to load data.</td></tr>";
+      }
+    }
+
+    // ✅ Assign worker
+    async function openAssign(cid, category) {
+      const map = {
+        water: "plumber",
+        electricity: "electrician",
+        Water: "plumber",
+        Electricity: "electrician",
+      };
+      const worker_type = map[category] || null;
+      const url =
+        "http://127.0.0.1:8000/workers" +
+        (worker_type
+          ? "?worker_type=" + encodeURIComponent(worker_type) + "&available=true"
+          : "?available=true");
+
+      const res = await fetch(url);
+      const data = await res.json();
+      const workers = data.workers || [];
+
+      const pick = prompt(
+        "Available workers:\n" +
+          workers.map((w) => w.username + " (" + w.id + ")").join("\n") +
+          "\nEnter worker id to assign:"
+      );
+      if (!pick) return;
+
+      const token = localStorage.getItem("idToken");
+      const r2 = await fetch(
+        `http://127.0.0.1:8000/complaints/${cid}/assign?worker_id=${pick}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: token ? "Bearer " + token : "",
+          },
+        }
+      );
+
+      if (r2.ok) {
+        alert("Assigned successfully!");
+        load();
+      } else {
+        alert("Assignment failed!");
+      }
+    }
+
+    // ✅ Make openAssign accessible globally
+    window.openAssign = openAssign;
+
+    // ✅ Logout functionality
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      try {
+        await signOut(auth);
+        localStorage.clear();
+        window.location.href = "login.html";
+        console.log("✅ Logged out successfully");
+      } catch (error) {
+        console.error("❌ Logout failed:", error);
+        alert("Logout failed: " + error.message);
+      }
+    });
+
+    // ✅ Initialize dashboard
+    window.addEventListener("DOMContentLoaded", load);
+  </script>
+
+  </body>
+</html>

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Krishnanagar Society</title>  
+
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f8f9fa;
+    }
+
+    header {
+      background-color: #003366;
+      color: white;
+      padding: 20px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 28px;
+    }
+
+    nav a {
+      color: white;
+      margin-left: 20px;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .hero {
+      position: relative;
+      height: 500px;
+      background: url('https://wallpaperaccess.com/full/1408441.jpg') center center/cover no-repeat;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: white;
+    }
+
+    .hero h2 {
+      font-size: 48px;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 20px 40px;
+      border-radius: 10px;
+    }
+
+    .about {
+      padding: 60px 40px;
+      background-color: white;
+      text-align: center;
+    }
+
+    .about h3 {
+      font-size: 32px;
+      color: #003366;
+      margin-bottom: 20px;
+    }
+
+    .about p {
+      font-size: 18px;
+      color: #444;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: auto;
+    }
+
+    footer {
+      background-color: #003366;
+      color: rgb(255, 255, 255);
+      text-align: center;
+      padding: 15px;
+      margin-top: 60px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Krishnanagar Society</h1>
+    <nav>
+      <a href="login.html">Login</a>
+      <a href="registration.html">Register</a>
+    </nav>
+  </header>
+
+  <div class="hero">
+    <h2>Welcome to Krishnanagar Residential Society</h2>
+  </div>
+
+  <section class="about">
+    <h3>About Our Society</h3>
+    <p>
+      Krishnanagar Society is a peaceful and well-maintained residential area located in the heart of our city.
+      We believe in a digital-first approach for better transparency, faster complaint redressal, and building a 
+      strong community. Our cloud-based complaint management portal allows residents to easily file issues and 
+      track them in real-time. Cleanliness, safety, and prompt service are the pillars of our society.
+    </p>
+  </section>
+
+  <footer>
+    &copy; 2025 Krishnanagar Society | Designed for better living
+  </footer>
+
+  <!-- Firebase + Firestore script -->
+  <script type="module">
+    // Import Firebase SDKs
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-analytics.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+    // ✅ Your Firebase configuration (hardcoded here is OK for frontend)
+    const firebaseConfig = {
+      apiKey: "AIzaSyC2pKa8cJJW_vVKw1kwhsiQS3k02eYhr4o",
+      authDomain: "society-resolver1.firebaseapp.com",
+      projectId: "society-resolver1",
+      storageBucket: "society-resolver1.firebasestorage.app",
+      messagingSenderId: "140793535075",
+      appId: "1:140793535075:web:6119a1f751f05afccaf656",
+      measurementId: "G-2N2QM0T53G"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const db = getFirestore(app);
+
+    // Example Firestore read
+    async function getSocietyData() {
+      const querySnapshot = await getDocs(collection(db, "society"));
+      querySnapshot.forEach((doc) => {
+        console.log(doc.id, " => ", doc.data());
+      });
+    }
+
+    getSocietyData();
+  </script>
+
+</body>
+</html>

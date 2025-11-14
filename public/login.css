@@ -1,0 +1,63 @@
+body.auth-body {
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(to right, #0072ff, #00c6ff);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.form-container {
+  background-color: #ffffff;
+  padding: 30px 40px;
+  border-radius: 12px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+  max-width: 400px;
+  width: 100%;
+}
+
+.form-container h2 {
+  margin-bottom: 20px;
+  color: #333;
+  text-align: center;
+}
+
+input[type="text"], input[type="email"], input[type="password"] {
+  width: 100%;
+  padding: 10px 15px;
+  margin: 10px 0;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 16px;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  background-color: #0072ff;
+  border: none;
+  color: white;
+  font-size: 16px;
+  margin-top: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #005ce6;
+}
+
+p {
+  text-align: center;
+  margin-top: 15px;
+}
+
+a {
+  color: #0072ff;
+  text-decoration: none;
+}
+
+#message{
+  color: rgb(243, 54, 54);
+}

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Complaint Status - Krishnanagar Society</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f5f6fa;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background-color: #003366;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 40px auto;
+      background-color: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      text-align: center;
+      color: #003366;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 30px;
+    }
+
+    th, td {
+      padding: 12px;
+      border: 1px solid #ccc;
+      text-align: center;
+    }
+
+    th {
+      background-color: #003366;
+      color: white;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f2f2f2;
+    }
+
+    .status-pending {
+      color: red;
+      font-weight: bold;
+    }
+
+    .status-progress {
+      color: orange;
+      font-weight: bold;
+    }
+
+    .status-resolved {
+      color: green;
+      font-weight: bold;
+    }
+
+    #noComplaints {
+      text-align: center;
+      color: #555;
+      margin-top: 20px;
+      font-size: 16px;
+    }
+
+    footer {
+      background-color: #003366;
+      color: white;
+      text-align: center;
+      padding: 10px;
+      margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Complaint Status - Krishnanagar Society</h1>
+</header>
+
+<div class="container">
+  <h2>Your Complaints</h2>
+  <table id="complaintTable">
+    <thead>
+      <tr>
+        <th>Complaint ID</th>
+        <th>Category</th>
+        <th>Description</th>
+        <th>Status</th>
+        <th>Assigned Worker</th>
+        <th>Date Filed</th>
+      </tr>
+    </thead>
+    <tbody id="complaintBody">
+      <!-- Dynamic rows go here -->
+    </tbody>
+  </table>
+
+  <p id="noComplaints" style="display:none;">No complaints found.</p>
+</div>
+
+<footer>
+  &copy; 2025 Krishnanagar Society | All Rights Reserved
+</footer>
+
+<!-- ✅ Firebase + Firestore Script -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+  import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+
+  // ✅ Firebase Configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyC2pKa8cJJW_vVKw1kwhsiQS3k02eYhr4o",
+    authDomain: "society-resolver1.firebaseapp.com",
+    projectId: "society-resolver1",
+    storageBucket: "society-resolver1.firebasestorage.app",
+    messagingSenderId: "140793535075",
+    appId: "1:140793535075:web:6119a1f751f05afccaf656",
+    measurementId: "G-2N2QM0T53G"
+  };
+
+  // ✅ Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const auth = getAuth(app);
+
+  // ✅ Listen for logged-in user
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+      alert("Please log in first.");
+      window.location.href = "login.html";
+      return;
+    }
+
+    console.log("🔑 Logged-in user:", user.email);
+
+    // ✅ Fetch user complaints
+    await loadComplaints(user.uid);
+  });
+
+  async function loadComplaints(uid) {
+    const tableBody = document.getElementById("complaintBody");
+    const noComplaints = document.getElementById("noComplaints");
+
+    tableBody.innerHTML = ""; // Clear table
+
+    try {
+      const q = query(collection(db, "complaints"), where("user_id", "==", uid));
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
+        noComplaints.style.display = "block";
+        return;
+      }
+
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        const row = document.createElement("tr");
+
+        const statusClass =
+          data.status === "pending"
+            ? "status-pending"
+            : data.status === "in progress"
+            ? "status-progress"
+            : "status-resolved";
+
+        row.innerHTML = `
+          <td>${doc.id}</td>
+          <td>${data.category || "-"}</td>
+          <td>${data.description || "-"}</td>
+          <td class="${statusClass}">${data.status || "-"}</td>
+          <td>${data.assigned_worker || "Not Assigned"}</td>
+          <td>${data.date || "-"}</td>
+        `;
+
+        tableBody.appendChild(row);
+      });
+    } catch (error) {
+      console.error("❌ Error loading complaints:", error);
+      alert("Failed to fetch complaints. Please check console.");
+    }
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login - Society Resolver</title>
+  <link rel="stylesheet" href="login.css"/>
+  <style>.role-selection{margin:12px 0;text-align:center}</style>
+</head>
+<body class="auth-body">
+  <div class="form-container">
+    <h2>Login to Society Resolver</h2>
+    <form id="loginForm">
+      <input type="email" id="email" name="email" placeholder="Email" required/>
+      <input type="password" id="password" name="password" placeholder="Password" required/>
+      <div class="role-selection">
+        <label><input type="radio" name="role" value="admin" required> Admin</label>
+        <label><input type="radio" name="role" value="worker"> Worker</label>
+        <label><input type="radio" name="role" value="user"> User</label>
+      </div>
+      <button type="submit">Login</button>
+    </form>
+    <p>Don't have an account? <a href="registration.html">Register here</a></p>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC2pKa8cJJW_vVKw1kwhsiQS3k02eYhr4o",
+      authDomain: "society-resolver1.firebaseapp.com",
+      projectId: "society-resolver1",
+      storageBucket: "society-resolver1.firebasestorage.app",
+      messagingSenderId: "140793535075",
+      appId: "1:140793535075:web:6119a1f751f05afccaf656",
+      measurementId: "G-2N2QM0T53G"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const role = document.querySelector('input[name="role"]:checked').value;
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        const idToken = await user.getIdToken();
+        localStorage.setItem("idToken", idToken);
+        localStorage.setItem("uid", user.uid);
+        localStorage.setItem("role", role);
+        if (role === "admin") window.location = "/public/dashboards/admin-dashboard.html";
+        else if (role === "worker") window.location = "/public/dashboards/worker-dashboard.html";
+        else window.location = "/public/user-history.html";
+      } catch (err) {
+        alert("Login failed: " + err.message);
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Submit Complaint - Krishnanagar Society</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f0f2f5;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background-color: #003366;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      background-color: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      text-align: center;
+      color: #003366;
+    }
+
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: 500;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 12px 20px;
+      background-color: #003366;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0059b3;
+    }
+
+    footer {
+      background-color: #003366;
+      color: white;
+      text-align: center;
+      padding: 10px;
+      position: fixed;
+      width: 100%;
+      bottom: 0;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Krishnanagar Society Complaint Portal</h1>
+</header>
+
+<div class="container">
+  <h2>Submit Your Complaint</h2>
+  <form id="complaintForm">
+    <label for="name">Your Name</label>
+    <input type="text" id="name" name="name" placeholder="Enter your full name" required>
+
+    <label for="category">Complaint Category</label>
+    <select id="category" name="category" required>
+      <option value="">-- Select Category --</option>
+      <option value="Water">Water Supply</option>
+      <option value="Electricity">Electricity</option>
+      <option value="Cleaning">Cleaning</option>
+      <option value="Security">Security</option>
+      <option value="Other">Other</option>
+    </select>
+
+    <label for="description">Complaint Description</label>
+    <textarea id="description" name="description" rows="5" placeholder="Explain your issue clearly..." required></textarea>
+
+    <label for="date">Date of Issue</label>
+    <input type="date" id="date" name="date" required>
+
+    <button type="submit">Submit Complaint</button>
+  </form>
+</div>
+
+<footer>
+  &copy; 2025 Krishnanagar Society | All Rights Reserved
+</footer>
+
+<!-- ✅ Script placed at the bottom so the form exists when it runs -->
+<script>
+  document.getElementById("complaintForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const payload = {
+      user_id: null, // You can replace with real user_id when Firebase Auth is added
+      name: document.getElementById("name").value,
+      category: document.getElementById("category").value,
+      description: document.getElementById("description").value,
+      date: document.getElementById("date").value
+    };
+
+    try {
+      const res = await fetch("http://127.0.0.1:8000/complaints", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      const json = await res.json();
+
+      if (res.ok) {
+        alert("Complaint submitted successfully! ID: " + json.id);
+        e.target.reset(); // clear form
+      } else {
+        alert("Error: " + (json.detail || JSON.stringify(json)));
+      }
+    } catch (err) {
+      console.error("🔥 Error submitting complaint:", err);
+      alert("Could not connect to backend. Make sure it's running.");
+    }
+  });
+</script>
+
+</body>
+</html>

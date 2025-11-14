@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Complaint History - Krishnanagar Society</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f0f2f5;
+      padding: 20px;
+    }
+
+    h2 {
+      text-align: center;
+      color: #003366;
+      margin-bottom: 30px;
+    }
+
+    table {
+      width: 95%;
+      margin: auto;
+      border-collapse: collapse;
+      background-color: #fff;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    th, td {
+      padding: 14px 16px;
+      text-align: center;
+      border-bottom: 1px solid #ddd;
+    }
+
+    th {
+      background-color: #003366;
+      color: white;
+      font-size: 16px;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    tr:hover {
+      background-color: #f1f1f1;
+    }
+
+    .status-open {
+      color: #d9534f;
+      font-weight: bold;
+    }
+
+    .status-in_progress {
+      color: #f0ad4e;
+      font-weight: bold;
+    }
+
+    .status-resolved {
+      color: #5cb85c;
+      font-weight: bold;
+    }
+
+    .refresh-btn {
+      display: block;
+      margin: 20px auto;
+      padding: 10px 20px;
+      background-color: #003366;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .refresh-btn:hover {
+      background-color: #0059b3;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>My Complaint History</h2>
+
+  <table id="historyTable">
+    <thead>
+      <tr>
+        <th>Complaint ID</th>
+        <th>Category</th>
+        <th>Description</th>
+        <th>Status</th>
+        <th>Submitted On</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td colspan="5" style="text-align:center;">Loading complaints...</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <button class="refresh-btn" onclick="loadUserComplaints()">🔄 Refresh</button>
+
+  <script>
+    // For demo: replace this with logged-in user's UID later
+    const USER_ID = "test-user"; // temporary, you can replace with real UID after login integration
+
+    async function loadUserComplaints() {
+      const tbody = document.querySelector("#historyTable tbody");
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Loading...</td></tr>`;
+
+      try {
+        const res = await fetch(`http://127.0.0.1:8000/complaints?user_id=${USER_ID}`);
+        const data = await res.json();
+
+        if (!res.ok) {
+          tbody.innerHTML = `<tr><td colspan="5" style="color:red;text-align:center;">Failed to load complaints</td></tr>`;
+          return;
+        }
+
+        const complaints = data.complaints || [];
+
+        if (complaints.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">No complaints found</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = complaints.map(c => `
+          <tr>
+            <td>${c.id || "—"}</td>
+            <td>${c.category}</td>
+            <td>${c.description}</td>
+            <td class="status-${c.status.toLowerCase()}">${c.status}</td>
+            <td>${c.date}</td>
+          </tr>
+        `).join("");
+
+      } catch (err) {
+        console.error("Error loading complaints:", err);
+        tbody.innerHTML = `<tr><td colspan="5" style="color:red;text-align:center;">Error loading complaints</td></tr>`;
+      }
+    }
+
+    // Load on page load
+    window.addEventListener("DOMContentLoaded", loadUserComplaints);
+  </script>
+
+</body>
+</html>

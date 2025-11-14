@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Admin Dashboard</title>
+  </head>
+  <body>
+    <h2>Admin - Complaints</h2>
+    <table id="table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Category</th>
+          <th>Status</th>
+          <th>Assign</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <script>
+      async function load() {
+        const res = await fetch("http://127.0.0.1:8000/complaints");
+        const data = await res.json();
+        const tbody = document.querySelector("#table tbody");
+        tbody.innerHTML = "";
+        for (const c of data.complaints) {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td>${c.id}</td><td>${c.name}</td><td>${
+            c.category
+          }</td><td>${c.status}</td>
+      <td><button onclick="openAssign('${c.id}','${c.category.replace(
+            /'/g,
+            ""
+          )}')">Assign</button></td>`;
+          tbody.appendChild(tr);
+        }
+      }
+      async function openAssign(cid, category) {
+        // map category -> worker_type (simple: water -> plumber, electricity -> electrician)
+        const map = {
+          Water: "plumber",
+          water: "plumber",
+          Electricity: "electrician",
+          electricity: "electrician",
+        };
+        const worker_type = map[category] || null;
+        const url =
+          "http://127.0.0.1:8000/workers" +
+          (worker_type
+            ? "?worker_type=" + worker_type + "&available=true"
+            : "?available=true");
+        const res = await fetch(url);
+        const data = await res.json();
+        const workers = data.workers || [];
+        const pick = prompt(
+          "Available workers:\\n" +
+            workers.map((w) => w.username + " (" + w.id + ")").join("\\n") +
+            "\\nEnter worker id to assign:"
+        );
+        if (!pick) return;
+        // call assign endpoint (assumes admin logged-in step skipped for local test)
+        const r2 = await fetch(
+          `http://127.0.0.1:8000/complaints/${cid}/assign?worker_id=${pick}`,
+          {
+            method: "PUT",
+            headers: {
+              Authorization: "Bearer " + localStorage.getItem("idToken") || "",
+            },
+          }
+        );
+        if (r2.ok) {
+          alert("Assigned");
+          load();
+        } else {
+          alert("Assign failed");
+        }
+      }
+
+      window.addEventListener("DOMContentLoaded", load);
+    </script>
+  </body>
+</html>
