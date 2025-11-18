@@ -2,10 +2,34 @@ import firebase_admin
 from firebase_admin import credentials, firestore, auth
 from typing import Optional, Dict, Any, List
 from datetime import datetime
+import os
+import json
 
-cred = credentials.Certificate("serviceAccountKey.json")
-firebase_admin.initialize_app(cred)
-db = firestore.client()
+def init_firebase_from_env():
+    """
+    Initialize Firebase Admin using a service account JSON stored in an env var.
+    Render / other hosts: set env var FIREBASE_SERVICE_ACCOUNT (or GOOGLE_APPLICATION_CREDENTIALS_JSON).
+    """
+    if not firebase_admin._apps:
+        # check both common names for env var (use either)
+        firebase_json = os.environ.get("FIREBASE_SERVICE_ACCOUNT") or os.environ.get("GOOGLE_APPLICATION_CREDENTIALS_JSON")
+        if not firebase_json:
+            raise RuntimeError("Missing FIREBASE_SERVICE_ACCOUNT or GOOGLE_APPLICATION_CREDENTIALS_JSON environment variable")
+
+        try:
+            creds_dict = json.loads(firebase_json)
+        except Exception as e:
+            raise RuntimeError(f"Failed to parse Firebase JSON from environment variable: {e}")
+
+        # Accept dict/string formats via from_json
+        cred = credentials.Certificate.from_json(creds_dict)
+        firebase_admin.initialize_app(cred)
+
+    return firestore.client()
+
+# Initialize DB client from env
+db = init_firebase_from_env()
+
 
 def init_firebase(service_account_path: Optional[str] = None):
     if not firebase_admin._apps:
