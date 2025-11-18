@@ -1,83 +1,107 @@
-from firebase_admin import credentials, initialize_app,firestore
+import os
+import json
+import pathlib
+from typing import Optional
+
 from fastapi import FastAPI, HTTPException, Depends, Header
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from typing import Optional
-import pathlib, os ,json
+
+from firebase_admin import credentials, initialize_app, firestore
+# Import your app-specific models and FirestoreService implementation
 from models import RegisterIn, ComplaintIn
-from firestore_service import init_firebase, FirestoreService
-import json
+from firestore_service import FirestoreService
 
-# # init firebase admin client (expects serviceAccountKey.json in back-end or env var)
-# SERVICE_ACCOUNT = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", "serviceAccountKey.json")
-# db = init_firebase(SERVICE_ACCOUNT)
-# fs = FirestoreService(db)
+# ---------- Firebase initialization ----------
+# Expecting the full JSON in this exact env var on Render:
+# GOOGLE_APPLICATION_CREDENTIALS_JSON
+cred_json = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS_JSON")
+if not cred_json:
+    # Fail fast - Render logs will show this
+    raise RuntimeError(
+        "Missing Firebase credentials. Set GOOGLE_APPLICATION_CREDENTIALS_JSON environment variable."
+    )
 
+try:
+    cred_dict = json.loads(cred_json)
+except Exception as e:
+    raise RuntimeError(f"Failed to parse GOOGLE_APPLICATION_CREDENTIALS_JSON: {e}")
+
+# Initialize Firebase Admin SDK
+cred = credentials.Certificate(cred_dict)
+initialize_app(cred)
+db = firestore.client()
+
+# Create FirestoreService wrapper (your implementation)
+fs = FirestoreService(db)
+
+# ---------- FastAPI app ----------
 app = FastAPI(title="Society Resolver API")
 
-cred_json = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS_JSON")
-if cred_json:
-    cred_dict = json.loads(cred_json)
-    cred = credentials.Certificate(cred_dict)
-    initialize_app(cred)
-    db = firestore.client()
-else:
-    print("Warning: Firebase credentials not found. Firebase not initialized.")
-
-@app.get("/")
-def root():
-    return {"message": "Backend is running!"}
-
-# Mount static public files (so backend can serve frontend during local testing)
+# ---------- Static files (optional, for local testing) ----------
 BASE_DIR = pathlib.Path(__file__).resolve().parent
 PUBLIC_DIR = BASE_DIR.parent / "public"
 if PUBLIC_DIR.exists():
     app.mount("/public", StaticFiles(directory=str(PUBLIC_DIR)), name="public")
 
+# ---------- CORS ----------
+# For production, set ALLOWED_ORIGINS env var to your frontend origin (comma-separated).
+# Example: REACT_APP_URL=https://your-firebase-site.web.app
+allowed_origins_env = os.environ.get("ALLOWED_ORIGINS", "*")
+if allowed_origins_env.strip() == "*":
+    allow_origins = ["*"]
+else:
+    allow_origins = [origin.strip() for origin in allowed_origins_env.split(",") if origin.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allow_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# ---------- Auth dependency ----------
 def firebase_auth(authorization: Optional[str] = Header(None)):
-    # simplified: expect "Bearer <id_token>"
+    """Expect header: Authorization: Bearer <id_token>"""
     if not authorization:
         raise HTTPException(status_code=401, detail="Authorization header missing")
     parts = authorization.split()
     if len(parts) != 2 or parts[0].lower() != "bearer":
         raise HTTPException(status_code=401, detail="Invalid Authorization header")
     id_token = parts[1]
-    return fs.verify_id_token(id_token)
+    try:
+        # fs.verify_id_token should call firebase_admin.auth.verify_id_token internally
+        verified = fs.verify_id_token(id_token)
+        return verified
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Invalid token: {e}")
 
+# ---------- Routes ----------
 @app.get("/")
 def root():
     return {"message": "API up"}
 
-# register endpoint - accepts JSON, creates auth user and user doc with type
 @app.post("/register")
 def register(payload: RegisterIn):
     try:
-        user = fs.create_user(username=payload.username, email=payload.email, password=payload.password,
-                              user_type=getattr(payload, "user_type", "user"),
-                              worker_type=getattr(payload, "worker_type", None))
+        user = fs.create_user(
+            username=payload.username,
+            email=payload.email,
+            password=payload.password,
+            user_type=getattr(payload, "user_type", "user"),
+            worker_type=getattr(payload, "worker_type", None),
+        )
         return {"message": "User created", "uid": user["uid"]}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-
-# -------------------------------------------------------------------------
-# 🔑 Login endpoint (Direct email + password + role check)
-# -------------------------------------------------------------------------
-from firebase_admin import firestore  # ensure this import exists
-
 @app.post("/login")
 def login_user(data: dict):
     """
-    Login user by verifying email and password stored in Firestore.
-    Returns user's role for dashboard redirection.
+    If your frontend uses FirebaseAuth, it should perform signInWithEmailAndPassword
+    and send idToken to backend. This endpoint is only needed if you do manual login.
+    Here we keep an email/password check against Firestore (if you store password there).
     """
     try:
         email = data.get("email")
@@ -86,7 +110,6 @@ def login_user(data: dict):
         if not email or not password:
             raise HTTPException(status_code=400, detail="Email and password required")
 
-        # ✅ Firestore query
         users_ref = db.collection("users")
         query = users_ref.where("email", "==", email).limit(1).get()
 
@@ -94,7 +117,6 @@ def login_user(data: dict):
             raise HTTPException(status_code=404, detail="User not found")
 
         user_data = query[0].to_dict()
-
         if not user_data:
             raise HTTPException(status_code=404, detail="User data missing")
 
@@ -107,13 +129,11 @@ def login_user(data: dict):
     except HTTPException:
         raise
     except Exception as e:
-        # Log the actual error so you can see it in console
+        # Log stack trace will appear in Render logs
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
-
-# complaints endpoints
 @app.post("/complaints")
 def create_complaint(complaint: ComplaintIn):
     cid = fs.create_complaint(complaint.dict())
@@ -134,14 +154,12 @@ def update_status(cid: str, status: str, user=Depends(firebase_auth)):
         raise HTTPException(status_code=404, detail="Complaint not found")
     return {"id": cid, "status": status}
 
-# Workers endpoints for admin assignment
 @app.get("/workers")
 def list_workers(worker_type: Optional[str] = None, available: Optional[bool] = None):
     return {"workers": fs.list_workers(worker_type=worker_type, available=available)}
 
 @app.put("/complaints/{cid}/assign")
 def assign_worker(cid: str, worker_id: str, user=Depends(firebase_auth)):
-    # set complaint assigned_to and set worker availability false
     ok = fs.assign_worker_to_complaint(cid, worker_id)
     if not ok:
         raise HTTPException(status_code=400, detail="Assign failed")
