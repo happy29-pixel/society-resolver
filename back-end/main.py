@@ -28,9 +28,14 @@ except Exception as e:
     raise RuntimeError(f"Failed to parse GOOGLE_APPLICATION_CREDENTIALS_JSON: {e}")
 
 # Initialize Firebase Admin SDK
-cred = credentials.Certificate(cred_dict)
-initialize_app(cred)
+cred = credentials.Certificate.from_json(cred_dict)
+try:
+    initialize_app(cred)
+except:
+    pass
+
 db = firestore.client()
+
 
 # Create FirestoreService wrapper (your implementation)
 fs = FirestoreService(db)
