@@ -4,8 +4,8 @@ from typing import Optional
 from fastapi import FastAPI, HTTPException, Depends, Header
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from firestore_service import FirestoreService, db
-from models import RegisterIn, ComplaintIn
+from .firestore_service import FirestoreService, db
+from .models import RegisterIn, ComplaintIn
 
 # FirestoreService instance
 fs = FirestoreService(db)
