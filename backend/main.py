@@ -1,57 +1,19 @@
 import os
-import json
 import pathlib
 from typing import Optional
-
 from fastapi import FastAPI, HTTPException, Depends, Header
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-
-from firebase_admin import credentials, initialize_app, firestore
-# Import your app-specific models and FirestoreService implementation
+from firestore_service import FirestoreService, db
 from models import RegisterIn, ComplaintIn
-from firestore_service import FirestoreService
 
-# ---------- Firebase initialization ----------
-# Expecting the full JSON in this exact env var on Render:
-# GOOGLE_APPLICATION_CREDENTIALS_JSON
-cred_json = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS_JSON")
-if not cred_json:
-    # Fail fast - Render logs will show this
-    raise RuntimeError(
-        "Missing Firebase credentials. Set GOOGLE_APPLICATION_CREDENTIALS_JSON environment variable."
-    )
-
-try:
-    cred_dict = json.loads(cred_json)
-except Exception as e:
-    raise RuntimeError(f"Failed to parse GOOGLE_APPLICATION_CREDENTIALS_JSON: {e}")
-
-# Initialize Firebase Admin SDK
-cred = credentials.Certificate.from_json(cred_dict)
-try:
-    initialize_app(cred)
-except:
-    pass
-
-db = firestore.client()
-
-
-# Create FirestoreService wrapper (your implementation)
+# FirestoreService instance
 fs = FirestoreService(db)
 
-# ---------- FastAPI app ----------
+# FastAPI app
 app = FastAPI(title="Society Resolver API")
 
-# ---------- Static files (optional, for local testing) ----------
-BASE_DIR = pathlib.Path(__file__).resolve().parent
-PUBLIC_DIR = BASE_DIR.parent / "public"
-if PUBLIC_DIR.exists():
-    app.mount("/public", StaticFiles(directory=str(PUBLIC_DIR)), name="public")
-
-# ---------- CORS ----------
-# For production, set ALLOWED_ORIGINS env var to your frontend origin (comma-separated).
-# Example: REACT_APP_URL=https://your-firebase-site.web.app
+# ---------- CORS setup ----------
 allowed_origins_env = os.environ.get("ALLOWED_ORIGINS", "*")
 if allowed_origins_env.strip() == "*":
     allow_origins = ["*"]
@@ -66,6 +28,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ---------- Static files (optional, for local testing) ----------
+BASE_DIR = pathlib.Path(__file__).resolve().parent
+PUBLIC_DIR = BASE_DIR.parent / "public"
+if PUBLIC_DIR.exists():
+    app.mount("/public", StaticFiles(directory=str(PUBLIC_DIR)), name="public")
+
 # ---------- Auth dependency ----------
 def firebase_auth(authorization: Optional[str] = Header(None)):
     """Expect header: Authorization: Bearer <id_token>"""
@@ -76,7 +44,6 @@ def firebase_auth(authorization: Optional[str] = Header(None)):
         raise HTTPException(status_code=401, detail="Invalid Authorization header")
     id_token = parts[1]
     try:
-        # fs.verify_id_token should call firebase_admin.auth.verify_id_token internally
         verified = fs.verify_id_token(id_token)
         return verified
     except Exception as e:
@@ -103,11 +70,6 @@ def register(payload: RegisterIn):
 
 @app.post("/login")
 def login_user(data: dict):
-    """
-    If your frontend uses FirebaseAuth, it should perform signInWithEmailAndPassword
-    and send idToken to backend. This endpoint is only needed if you do manual login.
-    Here we keep an email/password check against Firestore (if you store password there).
-    """
     try:
         email = data.get("email")
         password = data.get("password")
@@ -118,7 +80,7 @@ def login_user(data: dict):
         users_ref = db.collection("users")
         query = users_ref.where("email", "==", email).limit(1).get()
 
-        if not query or len(query) == 0:
+        if not query:
             raise HTTPException(status_code=404, detail="User not found")
 
         user_data = query[0].to_dict()
@@ -134,7 +96,6 @@ def login_user(data: dict):
     except HTTPException:
         raise
     except Exception as e:
-        # Log stack trace will appear in Render logs
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
@@ -169,3 +130,9 @@ def assign_worker(cid: str, worker_id: str, user=Depends(firebase_auth)):
     if not ok:
         raise HTTPException(status_code=400, detail="Assign failed")
     return {"id": cid, "assigned_to": worker_id}
+
+# ---------- Render: Port handling ----------
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
