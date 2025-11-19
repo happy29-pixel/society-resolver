@@ -4,6 +4,7 @@ from typing import Optional
 from fastapi import FastAPI, HTTPException, Depends, Header
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from .firestore_service import FirestoreService, db
 from .models import RegisterIn, ComplaintIn
 
@@ -53,6 +54,11 @@ def firebase_auth(authorization: Optional[str] = Header(None)):
 @app.get("/")
 def root():
     return {"message": "API up"}
+
+
+@app.get("/favicon.ico")
+def favicon():
+    return FileResponse(Path("public/favicon.ico"))
 
 @app.post("/register")
 def register(payload: RegisterIn):
