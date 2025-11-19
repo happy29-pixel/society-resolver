@@ -51,18 +51,6 @@ def firebase_auth(authorization: Optional[str] = Header(None)):
         raise HTTPException(status_code=401, detail=f"Invalid token: {e}")
 
 # ---------- Routes ----------
-
-@app.get("/test-firestore")
-def test_firestore():
-    try:
-        # Try reading a document
-        doc = db.collection("users").limit(1).get()
-        return {"success": True, "docs": [d.to_dict() for d in doc]}
-    except Exception as e:
-        return {"success": False, "error": str(e)}
-
-
-
 @app.get("/")
 def root():
     return {"message": "API up"}
