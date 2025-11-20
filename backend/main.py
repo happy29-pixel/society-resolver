@@ -11,6 +11,7 @@ from .firestore_service import FirestoreService, db
 from .models import RegisterIn, ComplaintIn
 import uuid
 from firebase_admin import firestore
+from pydantic import BaseModel
 
 # FirestoreService instance
 fs = FirestoreService(db)
@@ -76,43 +77,53 @@ def register(payload: RegisterIn):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+
+# ✅ Pydantic model for request validation
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
 @app.post("/login")
-def login_user(data: dict):
+def login_user(data: LoginRequest):
     """
-    If your frontend uses FirebaseAuth, it should perform signInWithEmailAndPassword
-    and send idToken to backend. This endpoint is only needed if you do manual login.
-    Here we keep an email/password check against Firestore (if you store password there).
+    Manual login using Firestore email/password.
     """
     try:
-        email = data.get("email")
-        password = data.get("password")
-
-        if not email or not password:
-            raise HTTPException(status_code=400, detail="Email and password required")
+        email = data.email
+        password = data.password
 
         users_ref = db.collection("users")
         query = users_ref.where("email", "==", email).limit(1).get()
 
-        if not query or len(query) == 0:
+        if not query:
             raise HTTPException(status_code=404, detail="User not found")
 
-        user_data = query[0].to_dict()
+        user_doc = query[0]
+        user_data = user_doc.to_dict()
+
         if not user_data:
             raise HTTPException(status_code=404, detail="User data missing")
 
         if user_data.get("password") != password:
             raise HTTPException(status_code=401, detail="Invalid password")
 
-        role = user_data.get("role", "user")
-        return {"message": "Login successful", "role": role}
+        # 🔹 Return user info (you can add more fields if needed)
+        return {
+            "message": "Login successful",
+            "user": {
+                "uid": user_doc.id,
+                "email": user_data.get("email"),
+                "username": user_data.get("username"),
+                "user_type": user_data.get("user_type", "user")
+            }
+        }
 
     except HTTPException:
         raise
     except Exception as e:
-        # Log stack trace will appear in Render logs
         import traceback
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal Server Error")
 
 @app.post("/complaints")
 def create_complaint(complaint: ComplaintIn):
