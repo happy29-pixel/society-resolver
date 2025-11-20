@@ -84,7 +84,7 @@ class LoginRequest(BaseModel):
     password: str
 
 @app.post("/login")
-def login_user(data: dict):
+def login_user(data: LoginRequest):
     try:
         email = data.get("email")
         password = data.get("password")
