@@ -135,7 +135,7 @@ def register_user(data: dict):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/login")
+@router.post("/login")
 def login_user(data: dict):
     try:
         email = data.get("email")
@@ -144,6 +144,7 @@ def login_user(data: dict):
         if not email or not password:
             raise HTTPException(status_code=400, detail="Email and password required")
 
+        # 🔎 Fetch user from Firestore
         users_ref = db.collection("users")
         query = users_ref.where("email", "==", email).limit(1).get()
 
@@ -151,15 +152,16 @@ def login_user(data: dict):
             raise HTTPException(status_code=404, detail="User not found")
 
         user_data = query[0].to_dict()
+
         if not user_data:
             raise HTTPException(status_code=404, detail="User data missing")
 
-        # ❗ plain text check
+        # 🔐 Validate hashed password
         stored_password = user_data.get("password")
-        if stored_password != password:
+        if not bcrypt.checkpw(password.encode("utf-8"), stored_password.encode("utf-8")):
             raise HTTPException(status_code=401, detail="Invalid password")
 
-        # 🔥 Generate fake token (you can replace with JWT later)
+        # 🔥 Generate a fake token (replace with JWT later)
         token = str(uuid.uuid4())
 
         return {
@@ -174,6 +176,7 @@ def login_user(data: dict):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 
 
