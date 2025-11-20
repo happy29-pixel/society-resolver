@@ -1,12 +1,14 @@
 import os
 import pathlib
 from typing import Optional
-from fastapi import FastAPI, HTTPException, Depends, Header
+from fastapi import FastAPI, HTTPException, Depends, Header, APIRouter
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from .firestore_service import FirestoreService, db
 from .models import RegisterIn, ComplaintIn
+import uuid
+from firebase_admin import firestore
 
 # FirestoreService instance
 fs = FirestoreService(db)
@@ -60,19 +62,78 @@ def root():
 def favicon():
     return FileResponse(Path("public/favicon.ico"))
 
-@app.post("/register")
-def register(payload: RegisterIn):
+
+router = APIRouter()
+@router.post("/register")
+def register_user(data: dict):
     try:
-        user = fs.create_user(
-            username=payload.username,
-            email=payload.email,
-            password=payload.password,
-            user_type=getattr(payload, "user_type", "user"),
-            worker_type=getattr(payload, "worker_type", None),
-        )
-        return {"message": "User created", "uid": user["uid"]}
+        username = data.get("username")
+        email = data.get("email")
+        password = data.get("password")
+        user_type = data.get("user_type", "user")
+        worker_type = data.get("worker_type")
+
+        # -------------------------
+        # Validate input fields
+        # -------------------------
+        if not username or not email or not password:
+            raise HTTPException(
+                status_code=400,
+                detail="Username, email and password are required."
+            )
+
+        # -------------------------
+        # Check if email already exists
+        # -------------------------
+        users_ref = db.collection("users")
+        existing = users_ref.where("email", "==", email).limit(1).get()
+
+        if existing:
+            raise HTTPException(
+                status_code=409,
+                detail="Email already registered."
+            )
+
+        # -------------------------
+        # Create user document
+        # -------------------------
+        uid = str(uuid.uuid4())
+
+        user_data = {
+            "uid": uid,
+            "username": username,
+            "email": email,
+            "password": password,   # (You can change to hashed later)
+            "role": user_type,
+            "created_at": firestore.SERVER_TIMESTAMP
+        }
+
+        # Add worker type if role = worker
+        if user_type == "worker":
+            if not worker_type:
+                raise HTTPException(status_code=400, detail="Worker type required for workers.")
+            user_data["worker_type"] = worker_type
+
+        # Save to Firestore
+        db.collection("users").document(uid).set(user_data)
+
+        # -------------------------
+        # Response sent to frontend
+        # -------------------------
+        return {
+            "message": "Registration successful",
+            "uid": uid,
+            "user_type": user_type,
+            "username": username
+        }
+
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/login")
 def login_user(data: dict):
@@ -93,18 +154,28 @@ def login_user(data: dict):
         if not user_data:
             raise HTTPException(status_code=404, detail="User data missing")
 
-        if user_data.get("password") != password:
+        # ❗ plain text check
+        stored_password = user_data.get("password")
+        if stored_password != password:
             raise HTTPException(status_code=401, detail="Invalid password")
 
-        role = user_data.get("role", "user")
-        return {"message": "Login successful", "role": role}
+        # 🔥 Generate fake token (you can replace with JWT later)
+        token = str(uuid.uuid4())
+
+        return {
+            "message": "Login successful",
+            "token": token,
+            "uid": user_data.get("uid"),
+            "user_type": user_data.get("role", "user"),
+            "username": user_data.get("username", "User")
+        }
 
     except HTTPException:
         raise
     except Exception as e:
-        import traceback
-        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+
 
 @app.post("/complaints")
 def create_complaint(complaint: ComplaintIn):

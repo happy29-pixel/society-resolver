@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>User Dashboard - Society Resolver</title>
+
   <style>
     /* ===== Base Layout ===== */
     body {
@@ -25,21 +26,14 @@
       font-weight: bold;
       letter-spacing: 1px;
     }
-    header nav ul {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      gap: 20px;
-    }
-    header nav a {
+    .logout-btn {
+      background-color: #e74c3c;
       color: white;
-      text-decoration: none;
-      font-weight: 500;
-    }
-    header nav a:hover,
-    header nav a.active {
-      text-decoration: underline;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
     }
 
     .dashboard {
@@ -53,10 +47,6 @@
       background: #0056b3;
       color: white;
       padding: 25px;
-    }
-    .sidebar h2 {
-      margin-bottom: 25px;
-      font-size: 18px;
     }
     .sidebar ul {
       list-style: none;
@@ -83,13 +73,8 @@
       overflow-y: auto;
       border-top-left-radius: 20px;
     }
-
-    .tab {
-      display: none;
-    }
-    .tab.active {
-      display: block;
-    }
+    .tab { display: none; }
+    .tab.active { display: block; }
 
     footer {
       text-align: center;
@@ -107,10 +92,7 @@
       border-radius: 10px;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
-    .complaint-form h2 {
-      text-align: center;
-      color: #003366;
-    }
+
     label {
       display: block;
       margin-top: 15px;
@@ -160,12 +142,12 @@
       background-color: #f9f9f9;
     }
 
+    /* Status colors */
     .status-open { color: #d9534f; font-weight: bold; }
     .status-in_progress { color: #f0ad4e; font-weight: bold; }
     .status-resolved { color: #5cb85c; font-weight: bold; }
 
     .refresh-btn {
-      display: block;
       margin: 20px auto;
       padding: 10px 20px;
       background-color: #003366;
@@ -174,261 +156,228 @@
       border-radius: 6px;
       cursor: pointer;
       font-size: 16px;
-    }
-    .refresh-btn:hover {
-      background-color: #0059b3;
-    }
-    .logout-btn {
-      background-color: #e74c3c;
-      color: white;
-      border: none;
-      padding: 10px 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-
-    .logout-btn:hover {
-      background-color: #c0392b;
+      display: block;
     }
   </style>
 </head>
 
 <body>
-  <header>
-    <div class="logo">Society Resolver</div>
-    <nav>
-      <button id="logoutBtn" class="logout-btn">Logout</button>
-    </nav>
-  </header>
 
-  <main class="dashboard">
-    <aside class="sidebar">
-      <h2>Menu</h2>
-      <ul>
-        <li><a href="#" id="formTab" class="active">📝 Register Complaint</a></li>
-        <li><a href="#" id="statusTab">📊 Complaint Status</a></li>
-        <li><a href="#" id="historyTab">📜 Complaint History</a></li>
-      </ul>
-    </aside>
+<header>
+  <div class="logo">Society Resolver</div>
+  <button id="logoutBtn" class="logout-btn">Logout</button>
+</header>
 
-    <section class="content">
-      <!-- ✅ Register Complaint -->
-      <div id="formSection" class="tab active">
-        <div class="complaint-form">
-          <h2>Submit Your Complaint</h2>
-          <form id="complaintForm">
-            <label for="name">Your Name</label>
-            <input type="text" id="name" name="name" placeholder="Enter your full name" required>
+<main class="dashboard">
 
-            <label for="category">Complaint Category</label>
-            <select id="category" name="category" required>
-              <option value="">-- Select Category --</option>
-              <option value="Water">Water Supply</option>
-              <option value="Electricity">Electricity</option>
-              <option value="Cleaning">Cleaning</option>
-              <option value="Security">Security</option>
-              <option value="Other">Other</option>
-            </select>
+  <!-- ========== SIDEBAR ========== -->
+  <aside class="sidebar">
+    <ul>
+      <li><a href="#" id="formTab" class="active">📝 Register Complaint</a></li>
+      <li><a href="#" id="statusTab">📊 Complaint Status</a></li>
+      <li><a href="#" id="historyTab">📜 Complaint History</a></li>
+    </ul>
+  </aside>
 
-            <label for="description">Complaint Description</label>
-            <textarea id="description" name="description" rows="5" placeholder="Explain your issue clearly..." required></textarea>
+  <section class="content">
 
-            <label for="date">Date of Issue</label>
-            <input type="date" id="date" name="date" required>
+    <!-- ========== REGISTER COMPLAINT ========== -->
+    <div id="formSection" class="tab active">
+      <div class="complaint-form">
+        <h2>Submit Your Complaint</h2>
 
-            <button class="button" type="submit">Submit Complaint</button>
-          </form>
-        </div>
+        <form id="complaintForm">
+          <label>Your Name</label>
+          <input type="text" id="name" required>
+
+          <label>Category</label>
+          <select id="category" required>
+            <option value="">-- Select Category --</option>
+            <option>Water</option>
+            <option>Electricity</option>
+            <option>Cleaning</option>
+            <option>Security</option>
+            <option>Other</option>
+          </select>
+
+          <label>Description</label>
+          <textarea id="description" rows="5" required></textarea>
+
+          <label>Date of Issue</label>
+          <input type="date" id="date" required>
+
+          <button class="button" type="submit">Submit Complaint</button>
+        </form>
       </div>
+    </div>
 
-      <!-- ✅ Complaint Status -->
-      <div id="statusSection" class="tab">
-        <h2>Complaint Status</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Complaint ID</th>
-              <th>Category</th>
-              <th>Description</th>
-              <th>Status</th>
-              <th>Date Filed</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>#101</td>
-              <td>Water</td>
-              <td>Leakage in bathroom pipe</td>
-              <td><strong style="color: orange;">In Progress</strong></td>
-              <td>2025-07-20</td>
-            </tr>
-            <tr>
-              <td>#102</td>
-              <td>Security</td>
-              <td>Gate guard missing at night</td>
-              <td><strong style="color: green;">Resolved</strong></td>
-              <td>2025-07-18</td>
-            </tr>
-            <tr>
-              <td>#103</td>
-              <td>Cleaning</td>
-              <td>Garbage not picked from Block A</td>
-              <td><strong style="color: red;">Pending</strong></td>
-              <td>2025-07-22</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+    <!-- ========== COMPLAINT STATUS (LIVE) ========== -->
+    <div id="statusSection" class="tab">
+      <h2>Complaint Status</h2>
 
-      <!-- ✅ Complaint History -->
-      <div id="historySection" class="tab">
-        <h2>My Complaint History</h2>
-        <table id="historyTable">
-          <thead>
-            <tr>
-              <th>Complaint ID</th>
-              <th>Category</th>
-              <th>Description</th>
-              <th>Status</th>
-              <th>Submitted On</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td colspan="5" style="text-align:center;">Loading complaints...</td>
-            </tr>
-          </tbody>
-        </table>
-        <button class="button" class="refresh-btn" onclick="loadUserComplaints()">🔄 Refresh</button>
-      </div>
-    </section>
-  </main>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Category</th>
+            <th>Description</th>
+            <th>Status</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody id="statusTableBody">
+          <tr><td colspan="5">Loading...</td></tr>
+        </tbody>
+      </table>
 
-  <footer>
-    <p>&copy; 2025 Society Resolver | All rights reserved.</p>
-  </footer>
+      <button class="refresh-btn" onclick="loadStatus()">🔄 Refresh</button>
+    </div>
 
-  <script type="module">
-    // ✅ Import Firebase
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-    import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+    <!-- ========== COMPLAINT HISTORY ========== -->
+    <div id="historySection" class="tab">
+      <h2>Complaint History</h2>
 
-    // ✅ Firebase config (use same values as your login/register)
-    const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_AUTH_DOMAIN",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_STORAGE_BUCKET",
-      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-      appId: "YOUR_APP_ID"
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Category</th>
+            <th>Description</th>
+            <th>Status</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody id="historyTableBody">
+          <tr><td colspan="5">Loading...</td></tr>
+        </tbody>
+      </table>
+
+      <button class="refresh-btn" onclick="loadHistory()">🔄 Refresh</button>
+    </div>
+
+  </section>
+</main>
+
+<footer>
+  <p>&copy; 2025 Society Resolver | All rights reserved.</p>
+</footer>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+  import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+
+  // ===== Firebase Setup =====
+  const firebaseConfig = {
+    apiKey: "YOUR_KEY",
+    authDomain: "YOUR_AUTH",
+    projectId: "YOUR_PROJECT",
+    storageBucket: "YOUR_BUCKET",
+    messagingSenderId: "YOUR_SENDER",
+    appId: "YOUR_APPID"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  // ===== TAB SWITCHING =====
+  const tabs = document.querySelectorAll(".sidebar a");
+  const sections = document.querySelectorAll(".tab");
+
+  tabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+      tabs.forEach(t => t.classList.remove("active"));
+      sections.forEach(s => s.classList.remove("active"));
+
+      tab.classList.add("active");
+      const id = tab.id.replace("Tab", "Section");
+      document.getElementById(id).classList.add("active");
+
+      if (tab.id === "statusTab") loadStatus();
+      if (tab.id === "historyTab") loadHistory();
+    });
+  });
+
+  // ===== LOGOUT =====
+  document.getElementById("logoutBtn").onclick = async () => {
+    await signOut(auth);
+    localStorage.clear();
+    window.location.href = "login.html";
+  };
+
+  // ===== SUBMIT COMPLAINT =====
+  document.getElementById("complaintForm").onsubmit = async (e) => {
+    e.preventDefault();
+
+    const payload = {
+      user_id: auth.currentUser?.uid,
+      name: name.value,
+      category: category.value,
+      description: description.value,
+      date: date.value
     };
 
-    // ✅ Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-
-    // ===== TAB SWITCHING =====
-    const tabs = document.querySelectorAll('.sidebar a');
-    const sections = document.querySelectorAll('.tab');
-
-    tabs.forEach(tab => {
-      tab.addEventListener('click', (e) => {
-        e.preventDefault();
-        tabs.forEach(t => t.classList.remove('active'));
-        sections.forEach(s => s.classList.remove('active'));
-
-        tab.classList.add('active');
-        const sectionId = tab.id.replace('Tab', 'Section');
-        document.getElementById(sectionId).classList.add('active');
-      });
+    const res = await fetch("http://127.0.0.1:8000/complaints", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
     });
 
-    // ===== LOGOUT BUTTON =====
-    document.getElementById("logoutBtn").addEventListener("click", async () => {
-      try {
-        await signOut(auth);
-        localStorage.clear();
-        window.location.href = "login.html";
-        console.log("✅ Logged out successfully");
-      } catch (error) {
-        console.error("❌ Logout failed:", error);
-        alert("Logout failed: " + error.message);
-      }
-    });
+    const data = await res.json();
+    alert("Complaint Submitted! ID: " + data.id);
+  };
 
-    // ===== COMPLAINT SUBMISSION =====
-    document.getElementById("complaintForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
+  // ===== LOAD STATUS =====
+  async function loadStatus() {
+    const uid = auth.currentUser?.uid;
+    const tbody = document.getElementById("statusTableBody");
+    tbody.innerHTML = "<tr><td colspan='5'>Loading...</td></tr>";
 
-      const payload = {
-        user_id: "test-user", // Replace with real user_id from Firebase
-        name: document.getElementById("name").value,
-        category: document.getElementById("category").value,
-        description: document.getElementById("description").value,
-        date: document.getElementById("date").value
-      };
+    const res = await fetch(`http://127.0.0.1:8000/complaints?user_id=${uid}`);
+    const data = await res.json();
 
-      try {
-        const res = await fetch("http://127.0.0.1:8000/complaints", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-
-        const json = await res.json();
-
-        if (res.ok) {
-          alert("Complaint submitted successfully! ID: " + json.id);
-          e.target.reset();
-        } else {
-          alert("Error: " + (json.detail || JSON.stringify(json)));
-        }
-      } catch (err) {
-        console.error("🔥 Error submitting complaint:", err);
-        alert("Could not connect to backend. Make sure it's running.");
-      }
-    });
-
-    // ===== LOAD USER COMPLAINT HISTORY =====
-    async function loadUserComplaints() {
-      const tbody = document.querySelector("#historyTable tbody");
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Loading...</td></tr>`;
-      const USER_ID = "test-user"; // Replace with Firebase UID later
-
-      try {
-        const res = await fetch(`http://127.0.0.1:8000/complaints?user_id=${USER_ID}`);
-        const data = await res.json();
-
-        if (!res.ok) {
-          tbody.innerHTML = `<tr><td colspan="5" style="color:red;text-align:center;">Failed to load complaints</td></tr>`;
-          return;
-        }
-
-        const complaints = data.complaints || [];
-        if (complaints.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">No complaints found</td></tr>`;
-          return;
-        }
-
-        tbody.innerHTML = complaints.map(c => `
-          <tr>
-            <td>${c.id || "—"}</td>
-            <td>${c.category}</td>
-            <td>${c.description}</td>
-            <td class="status-${c.status.toLowerCase()}">${c.status}</td>
-            <td>${c.date}</td>
-          </tr>
-        `).join("");
-      } catch (err) {
-        console.error("Error loading complaints:", err);
-        tbody.innerHTML = `<tr><td colspan="5" style="color:red;text-align:center;">Error loading complaints</td></tr>`;
-      }
+    const list = data.complaints || [];
+    if (list.length === 0) {
+      tbody.innerHTML = "<tr><td colspan='5'>No complaints found</td></tr>";
+      return;
     }
 
-    // ✅ Load history when "History" tab is clicked
-    document.getElementById("historyTab").addEventListener("click", loadUserComplaints);
-  </script>
+    tbody.innerHTML = list.reverse().map(c => `
+      <tr>
+        <td>${c.id}</td>
+        <td>${c.category}</td>
+        <td>${c.description}</td>
+        <td class="status-${c.status.toLowerCase()}">${c.status}</td>
+        <td>${c.date}</td>
+      </tr>
+    `).join("");
+  }
+
+  // ===== LOAD HISTORY =====
+  async function loadHistory() {
+    const uid = auth.currentUser?.uid;
+    const tbody = document.getElementById("historyTableBody");
+    tbody.innerHTML = "<tr><td colspan='5'>Loading...</td></tr>";
+
+    const res = await fetch(`http://127.0.0.1:8000/complaints?user_id=${uid}`);
+    const data = await res.json();
+
+    const list = data.complaints || [];
+    if (list.length === 0) {
+      tbody.innerHTML = "<tr><td colspan='5'>No complaint history</td></tr>";
+      return;
+    }
+
+    tbody.innerHTML = list.map(c => `
+      <tr>
+        <td>${c.id}</td>
+        <td>${c.category}</td>
+        <td>${c.description}</td>
+        <td class="status-${c.status.toLowerCase()}">${c.status}</td>
+        <td>${c.date}</td>
+      </tr>
+    `).join("");
+  }
+</script>
 
 </body>
 </html>

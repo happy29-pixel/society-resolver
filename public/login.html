@@ -2,93 +2,82 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login - Society Resolver</title>
-  <link rel="stylesheet" href="login.css"/>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="login.css" />
 </head>
+
 <body class="auth-body">
+
   <div class="form-container">
     <h2>Login to Society Resolver</h2>
-    
+
     <form id="loginForm">
-      <input type="email" id="email" name="email" placeholder="Email" required/>
-      <input type="password" id="password" name="password" placeholder="Password" required/>
+      <input type="email" id="email" placeholder="Email" required />
+      <input type="password" id="password" placeholder="Password" required />
 
       <button type="submit">Login</button>
     </form>
 
-    <p>Don't have an account? <a href="registration.html">Register here</a></p>
+    <p>
+      Don't have an account?
+      <a href="registration.html">Register here</a>
+    </p>
   </div>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+    import { API_URL } from "./config.js";
 
-    // ✅ Firebase Config
-    const firebaseConfig = {
-      apiKey: "AIzaSyC2pKa8cJJW_vVKw1kwhsiQS3k02eYhr4o",
-      authDomain: "society-resolver1.firebaseapp.com",
-      projectId: "society-resolver1",
-      storageBucket: "society-resolver1.firebasestorage.app",
-      messagingSenderId: "140793535075",
-      appId: "1:140793535075:web:6119a1f751f05afccaf656",
-      measurementId: "G-2N2QM0T53G"
-    };
+    const loginForm = document.getElementById("loginForm");
 
-    // ✅ Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-
-    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+    loginForm.addEventListener("submit", async (e) => {
       e.preventDefault();
 
       const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value.trim();
 
+      if (!email || !password) {
+        alert("Please enter both email and password.");
+        return;
+      }
+
       try {
-        // 🔹 Step 1: Authenticate user
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
-        const idToken = await user.getIdToken();
+        const response = await fetch(`${API_URL}/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
 
-        console.log("✅ Logged in:", user.email);
-
-        // 🔹 Step 2: Fetch user document from Firestore
-        const userDocRef = doc(db, "users", user.uid);
-        const userDoc = await getDoc(userDocRef);
-
-        if (!userDoc.exists()) {
-          alert("No user data found in Firestore!");
-          return;
+        // If API returns 4xx or 5xx
+        if (!response.ok) {
+          const errText = await response.text();
+          throw new Error(errText || "Unable to login");
         }
 
-        const userData = userDoc.data();
-        console.log("👤 User Data:", userData);
+        const data = await response.json();
 
-        // 🔹 Step 3: Save token & user info locally
-        localStorage.setItem("idToken", idToken);
-        localStorage.setItem("uid", user.uid);
-        localStorage.setItem("user_type", userData.user_type);
-        localStorage.setItem("username", userData.username);
+        // Save session data
+        localStorage.setItem("idToken", data.token);
+        localStorage.setItem("uid", data.uid);
+        localStorage.setItem("username", data.username);
+        localStorage.setItem("user_type", data.user_type);
 
-        if (!userDoc.exists()) {
-  alert("No user data found in Firestore!");
-  return;
-}
-
-        // 🔹 Step 4: Redirect based on user_type
-        if (userData.user_type === "admin") {
-          window.location.href = "admin-dashboard.html";
-        } else if (userData.user_type === "worker") {
-          window.location.href = "worker-dashboard.html";
-        } else {
-          window.location.href = "user-dashboard.html";
+        // Redirect by role
+        switch (data.user_type) {
+          case "admin":
+            window.location.href = "admin-dashboard.html";
+            break;
+          case "worker":
+            window.location.href = "worker-dashboard.html";
+            break;
+          default:
+            window.location.href = "user-dashboard.html";
         }
 
       } catch (error) {
-        console.error("❌ Login failed:", error);
+        console.error("❌ Login Error:", error);
         alert("Login failed: " + error.message);
       }
     });

@@ -73,7 +73,7 @@
 
     footer {
       background-color: #003366;
-      color: rgb(255, 255, 255);
+      color: white;
       text-align: center;
       padding: 15px;
       margin-top: 60px;
@@ -107,40 +107,6 @@
   <footer>
     &copy; 2025 Krishnanagar Society | Designed for better living
   </footer>
-
-  <!-- Firebase + Firestore script -->
-  <script type="module">
-    // Import Firebase SDKs
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-analytics.js";
-    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-
-    // ✅ Your Firebase configuration (hardcoded here is OK for frontend)
-    const firebaseConfig = {
-      apiKey: "AIzaSyC2pKa8cJJW_vVKw1kwhsiQS3k02eYhr4o",
-      authDomain: "society-resolver1.firebaseapp.com",
-      projectId: "society-resolver1",
-      storageBucket: "society-resolver1.firebasestorage.app",
-      messagingSenderId: "140793535075",
-      appId: "1:140793535075:web:6119a1f751f05afccaf656",
-      measurementId: "G-2N2QM0T53G"
-    };
-
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(app);
-    const db = getFirestore(app);
-
-    // Example Firestore read
-    async function getSocietyData() {
-      const querySnapshot = await getDocs(collection(db, "society"));
-      querySnapshot.forEach((doc) => {
-        console.log(doc.id, " => ", doc.data());
-      });
-    }
-
-    getSocietyData();
-  </script>
 
 </body>
 </html>
