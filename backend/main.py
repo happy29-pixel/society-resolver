@@ -84,30 +84,34 @@ class LoginRequest(BaseModel):
     password: str
 
 @app.post("/login")
-def login_user(data: LoginRequest):
-    """
-    Manual login using Firestore email/password.
-    """
+def login_user(data: dict):
     try:
-        email = data.email
-        password = data.password
+        email = data.get("email")
+        password = data.get("password")
 
+        if not email or not password:
+            raise HTTPException(status_code=400, detail="Email and password required")
+
+        # 🔎 Fetch user from Firestore
         users_ref = db.collection("users")
         query = users_ref.where("email", "==", email).limit(1).get()
 
         if not query:
             raise HTTPException(status_code=404, detail="User not found")
 
-        user_doc = query[0]
-        user_data = user_doc.to_dict()
+        user_data = query[0].to_dict()
 
         if not user_data:
             raise HTTPException(status_code=404, detail="User data missing")
 
-        if user_data.get("password") != password:
+        # 🔐 Validate hashed password
+        stored_password = user_data.get("password")
+        if password != stored_password:
             raise HTTPException(status_code=401, detail="Invalid password")
 
-        # 🔹 Return user info (you can add more fields if needed)
+        # 🔥 Generate a fake token (replace with JWT later)
+        token = str(uuid.uuid4())
+
         return {
             "message": "Login successful",
             "user": {
@@ -121,9 +125,8 @@ def login_user(data: LoginRequest):
     except HTTPException:
         raise
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/complaints")
 def create_complaint(complaint: ComplaintIn):
