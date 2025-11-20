@@ -6,28 +6,28 @@ import os
 import json
 
 def init_firebase_from_env():
-    """
-    Initialize Firebase Admin using a service account JSON stored in an env var.
-    Render / other hosts: set env var FIREBASE_SERVICE_ACCOUNT (or GOOGLE_APPLICATION_CREDENTIALS_JSON).
-    """
-    if not firebase_admin._apps:
-        # check both common names for env var (use either)
-        firebase_json = os.environ.get("FIREBASE_SERVICE_ACCOUNT") or os.environ.get("GOOGLE_APPLICATION_CREDENTIALS_JSON")
-        if not firebase_json:
-            raise RuntimeError("Missing FIREBASE_SERVICE_ACCOUNT or GOOGLE_APPLICATION_CREDENTIALS_JSON environment variable")
+    if firebase_admin._apps:
+        return firestore.client()  # already initialized
 
+    firebase_json = os.environ.get("FIREBASE_SERVICE_ACCOUNT") or os.environ.get("GOOGLE_APPLICATION_CREDENTIALS_JSON")
+    
+    if firebase_json:
         try:
-            creds_dict = json.loads(firebase_json)
+            cred_dict = json.loads(firebase_json)
+            cred_dict["private_key"] = cred_dict["private_key"].replace("\\n", "\n")
+            cred = credentials.Certificate(cred_dict)
         except Exception as e:
             raise RuntimeError(f"Failed to parse Firebase JSON from environment variable: {e}")
+    else:
+        local_path = os.path.join(os.path.dirname(__file__), "serviceAccountKey.json")
+        if not os.path.exists(local_path):
+            raise RuntimeError("Firebase credentials not found in env var or local file")
+        cred = credentials.Certificate(local_path)
 
-        # Accept dict/string formats via from_json
-        cred = credentials.Certificate.from_json(creds_dict)
-        firebase_admin.initialize_app(cred)
-
+    firebase_admin.initialize_app(cred)
     return firestore.client()
 
-# Initialize DB client from env
+# Initialize DB client
 db = init_firebase_from_env()
 
 
