@@ -86,8 +86,8 @@ class LoginRequest(BaseModel):
 @app.post("/login")
 def login_user(data: LoginRequest):
     try:
-        email = data.get("email")
-        password = data.get("password")
+        email = data.email
+        password = data.password
 
         if not email or not password:
             raise HTTPException(status_code=400, detail="Email and password required")
@@ -99,12 +99,13 @@ def login_user(data: LoginRequest):
         if not query:
             raise HTTPException(status_code=404, detail="User not found")
 
-        user_data = query[0].to_dict()
+        user_doc = query[0]
+        user_data = user_doc.to_dict()
 
         if not user_data:
             raise HTTPException(status_code=404, detail="User data missing")
 
-        # 🔐 Validate hashed password
+        # 🔐 Validate password (plain text for now)
         stored_password = user_data.get("password")
         if password != stored_password:
             raise HTTPException(status_code=401, detail="Invalid password")
@@ -114,10 +115,11 @@ def login_user(data: LoginRequest):
 
         return {
             "message": "Login successful",
+            "token": token,
             "user": {
                 "uid": user_doc.id,
                 "email": user_data.get("email"),
-                "username": user_data.get("username"),
+                "username": user_data.get("username", ""),
                 "user_type": user_data.get("user_type", "user")
             }
         }
@@ -125,7 +127,9 @@ def login_user(data: LoginRequest):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail="Internal Server Error")
 
 
 @app.post("/complaints")
