@@ -89,6 +89,10 @@
       font-size: 15px;
       color: #333;
     }
+    p {
+      text-align: center;
+      margin-top: 15px;
+    }
 
     @media (max-width: 480px) {
       form {
@@ -127,6 +131,8 @@
     <div id="message"></div>
 
     <button type="submit">Register</button>
+    <p>Have a Account <a href="login.html">Login here</a></p>
+
   </form>
 
   <script type="module">
@@ -187,7 +193,7 @@
       const payload = { username, email, password, user_type, worker_type };
 
       try {
-        const res = await fetch(`${API_URL}/auth/register`, {
+        const res = await fetch(`${API_URL}/register`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)

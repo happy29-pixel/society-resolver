@@ -263,76 +263,89 @@
 </footer>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-  import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
-  // ===== Firebase Setup =====
-  const firebaseConfig = {
-    apiKey: "YOUR_KEY",
-    authDomain: "YOUR_AUTH",
-    projectId: "YOUR_PROJECT",
-    storageBucket: "YOUR_BUCKET",
-    messagingSenderId: "YOUR_SENDER",
-    appId: "YOUR_APPID"
-  };
+// ===== Firebase Setup =====
+const firebaseConfig = {
+  apiKey: "YOUR_KEY",
+  authDomain: "YOUR_AUTH",
+  projectId: "YOUR_PROJECT",
+  storageBucket: "YOUR_BUCKET",
+  messagingSenderId: "YOUR_SENDER",
+  appId: "YOUR_APPID"
+};
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 
-  // ===== TAB SWITCHING =====
-  const tabs = document.querySelectorAll(".sidebar a");
-  const sections = document.querySelectorAll(".tab");
+// ===== TAB SWITCHING =====
+const tabs = document.querySelectorAll(".sidebar a");
+const sections = document.querySelectorAll(".tab");
 
-  tabs.forEach(tab => {
-    tab.addEventListener("click", () => {
-      tabs.forEach(t => t.classList.remove("active"));
-      sections.forEach(s => s.classList.remove("active"));
+tabs.forEach(tab => {
+  tab.addEventListener("click", () => {
+    tabs.forEach(t => t.classList.remove("active"));
+    sections.forEach(s => s.classList.remove("active"));
 
-      tab.classList.add("active");
-      const id = tab.id.replace("Tab", "Section");
-      document.getElementById(id).classList.add("active");
+    tab.classList.add("active");
+    const id = tab.id.replace("Tab", "Section");
+    document.getElementById(id).classList.add("active");
 
-      if (tab.id === "statusTab") loadStatus();
-      if (tab.id === "historyTab") loadHistory();
-    });
+    if (tab.id === "statusTab") loadStatus();
+    if (tab.id === "historyTab") loadHistory();
   });
+});
 
-  // ===== LOGOUT =====
-  document.getElementById("logoutBtn").onclick = async () => {
-    await signOut(auth);
-    localStorage.clear();
-    window.location.href = "login.html";
+// ===== LOGOUT =====
+document.getElementById("logoutBtn").onclick = async () => {
+  await signOut(auth);
+  localStorage.clear();
+  window.location.href = "login.html";
+};
+
+// ===== SUBMIT COMPLAINT =====
+document.getElementById("complaintForm").onsubmit = async (e) => {
+  e.preventDefault();
+
+  const payload = {
+    user_id: auth.currentUser?.uid,
+    name: document.getElementById("name").value,
+    category: document.getElementById("category").value,
+    description: document.getElementById("description").value,
+    date: document.getElementById("date").value
   };
 
-  // ===== SUBMIT COMPLAINT =====
-  document.getElementById("complaintForm").onsubmit = async (e) => {
-    e.preventDefault();
-
-    const payload = {
-      user_id: auth.currentUser?.uid,
-      name: name.value,
-      category: category.value,
-      description: description.value,
-      date: date.value
-    };
-
+  try {
     const res = await fetch("https://society-resolver.onrender.com/complaints", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
 
-    const data = await res.json();
-    alert("Complaint Submitted! ID: " + data.id);
-  };
+    if (!res.ok) throw new Error("Failed to submit complaint");
 
-  // ===== LOAD STATUS =====
-  async function loadStatus() {
-    const uid = auth.currentUser?.uid;
-    const tbody = document.getElementById("statusTableBody");
-    tbody.innerHTML = "<tr><td colspan='5'>Loading...</td></tr>";
+    alert("Complaint Submitted Successfully!");
+    document.getElementById("complaintForm").reset();
 
-    const res = await fetch(`http://127.0.0.1:8000/complaints?user_id=${uid}`);
+    // Refresh status table automatically if visible
+    if (document.getElementById("statusSection").classList.contains("active")) {
+      loadStatus();
+    }
+  } catch (err) {
+    console.error("Error submitting complaint:", err);
+    alert("Failed to submit complaint. Please try again.");
+  }
+};
+
+// ===== LOAD STATUS =====
+async function loadStatus() {
+  const uid = auth.currentUser?.uid;
+  const tbody = document.getElementById("statusTableBody");
+  tbody.innerHTML = "<tr><td colspan='5'>Loading...</td></tr>";
+
+  try {
+    const res = await fetch(`https://society-resolver.onrender.com/complaints?user_id=${uid}`);
     const data = await res.json();
 
     const list = data.complaints || [];
@@ -343,22 +356,27 @@
 
     tbody.innerHTML = list.reverse().map(c => `
       <tr>
-        <td>${c.id}</td>
+        <td>${c.id || "-"}</td>
         <td>${c.category}</td>
         <td>${c.description}</td>
         <td class="status-${c.status.toLowerCase()}">${c.status}</td>
         <td>${c.date}</td>
       </tr>
     `).join("");
+  } catch (err) {
+    console.error("Error loading status:", err);
+    tbody.innerHTML = "<tr><td colspan='5'>Error loading complaints</td></tr>";
   }
+}
 
-  // ===== LOAD HISTORY =====
-  async function loadHistory() {
-    const uid = auth.currentUser?.uid;
-    const tbody = document.getElementById("historyTableBody");
-    tbody.innerHTML = "<tr><td colspan='5'>Loading...</td></tr>";
+// ===== LOAD HISTORY =====
+async function loadHistory() {
+  const uid = auth.currentUser?.uid;
+  const tbody = document.getElementById("historyTableBody");
+  tbody.innerHTML = "<tr><td colspan='5'>Loading...</td></tr>";
 
-    const res = await fetch(`http://127.0.0.1:8000/complaints?user_id=${uid}`);
+  try {
+    const res = await fetch(`https://society-resolver.onrender.com/complaints?user_id=${uid}`);
     const data = await res.json();
 
     const list = data.complaints || [];
@@ -369,14 +387,18 @@
 
     tbody.innerHTML = list.map(c => `
       <tr>
-        <td>${c.id}</td>
+        <td>${c.id || "-"}</td>
         <td>${c.category}</td>
         <td>${c.description}</td>
         <td class="status-${c.status.toLowerCase()}">${c.status}</td>
         <td>${c.date}</td>
       </tr>
     `).join("");
+  } catch (err) {
+    console.error("Error loading history:", err);
+    tbody.innerHTML = "<tr><td colspan='5'>Error loading history</td></tr>";
   }
+}
 </script>
 
 </body>
