@@ -81,9 +81,13 @@ def register(payload: RegisterIn):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
 
 @app.post("/login")
-def login(payload: LoginIn):
+def login(payload: LoginRequest):
     try:
         user = fs.get_user_by_email(payload.email)
 
