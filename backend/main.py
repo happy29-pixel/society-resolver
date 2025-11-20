@@ -69,7 +69,7 @@ def favicon():
 
 
 @app.post("/register")
-def register(payload: RegisterIn):
+def register(data: dict):
     try:
         user = fs.create_user(
             username=payload.username,
