@@ -63,7 +63,7 @@ def root():
 
 @app.get("/favicon.ico")
 def favicon():
-    return FileResponse(Path("public/favicon.ico"))
+    return ""
 
 
 router = APIRouter()
