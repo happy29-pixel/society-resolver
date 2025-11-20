@@ -1,6 +1,6 @@
 import os
 import pathlib
-import bcrypt
+from passlib.hash import bcrypt
 from pathlib import Path
 from typing import Optional
 from fastapi import FastAPI, HTTPException, Depends, Header, APIRouter
@@ -89,7 +89,7 @@ def register_user(data: dict):
         uid = str(uuid.uuid4())
 
         # 🔐 HASH PASSWORD here
-        hashed_pw = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+        hashed_pw = bcrypt.hash(password)
 
         user_data = {
             "uid": uid,
@@ -143,7 +143,7 @@ def login_user(data: dict):
 
         # 🔐 Validate hashed password
         stored_password = user_data.get("password")
-        if not bcrypt.checkpw(password.encode("utf-8"), stored_password.encode("utf-8")):
+        if not bcrypt.verify(password, stored_password):
             raise HTTPException(status_code=401, detail="Invalid password")
 
         # 🔥 Generate a fake token (replace with JWT later)
