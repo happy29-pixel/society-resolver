@@ -65,7 +65,6 @@ def root():
 def favicon():
     return ""
 
-
 @app.post("/register")
 def register(payload: RegisterIn):
     try:
