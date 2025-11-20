@@ -87,27 +87,52 @@ class LoginRequest(BaseModel):
 
 
 @app.post("/login")
-def login(payload: LoginRequest):
+def login_user(data: LoginRequest):  # <- use LoginRequest, not LoginIn
     try:
-        user = fs.get_user_by_email(payload.email)
+        email = data.email.strip()
+        password = data.password.strip()
 
-        if not user:
-            raise HTTPException(status_code=400, detail="User not found")
+        if not email or not password:
+            raise HTTPException(status_code=400, detail="Email and password required")
 
-        # SIMPLE PLAIN VALIDATION
-        if user["password"] != payload.password:
-            raise HTTPException(status_code=400, detail="Incorrect password")
+        # 🔎 Fetch user from Firestore
+        users_ref = db.collection("users")
+        query = users_ref.where("email", "==", email).limit(1).get()
 
+        if not query:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        user_doc = query[0]
+        user_data = user_doc.to_dict()
+
+        if not user_data:
+            raise HTTPException(status_code=404, detail="User data missing")
+
+        # 🔐 Validate password (plain text)
+        if user_data.get("password") != password:
+            raise HTTPException(status_code=401, detail="Invalid password")
+
+        # 🔥 Generate a temporary token (replace with JWT later)
+        token = str(uuid.uuid4())
+
+        # ✅ Return user info
         return {
             "message": "Login successful",
-            "uid": user["uid"],
-            "email": user["email"],
-            "user_type": user.get("user_type", "user")
+            "token": token,
+            "user": {
+                "uid": user_doc.id,
+                "email": user_data.get("email"),
+                "username": user_data.get("username", ""),
+                "user_type": user_data.get("user_type", "user")
+            }
         }
 
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail="Internal Server Error")
 
 @app.post("/complaints")
 def create_complaint(complaint: ComplaintIn):
