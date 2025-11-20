@@ -88,14 +88,11 @@ def register_user(data: dict):
 
         uid = str(uuid.uuid4())
 
-        # 🔐 HASH PASSWORD here
-        hashed_pw = bcrypt.hash(password)
-
         user_data = {
             "uid": uid,
             "username": username,
             "email": email,
-            "password": hashed_pw,  # <-- now hashed
+            "password": password,  # <-- now hashed
             "role": user_type,
             "created_at": firestore.SERVER_TIMESTAMP
         }
@@ -143,7 +140,7 @@ def login_user(data: dict):
 
         # 🔐 Validate hashed password
         stored_password = user_data.get("password")
-        if not bcrypt.verify(password, stored_password):
+        if password != stored_password:
             raise HTTPException(status_code=401, detail="Invalid password")
 
         # 🔥 Generate a fake token (replace with JWT later)
