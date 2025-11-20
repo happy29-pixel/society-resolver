@@ -68,22 +68,55 @@ def favicon():
     return ""
 
 
-@app.post("/register")
-def register(data: dict):
-    try:
-        user = fs.create_user(
-            username=payload.username,
-            email=payload.email,
-            password=payload.password,
-            user_type=getattr(payload, "user_type", "user"),
-            worker_type=getattr(payload, "worker_type", None),
-        )
-        return {"message": "User created", "uid": user["uid"]}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-
 router = APIRouter()
+
+@router.post("/register")
+def register_user(data: dict):
+    try:
+        username = data.get("username")
+        email = data.get("email")
+        password = data.get("password")
+        user_type = data.get("user_type", "user")
+        worker_type = data.get("worker_type")
+
+        if not username or not email or not password:
+            raise HTTPException(status_code=400, detail="Username, email and password are required.")
+
+        users_ref = db.collection("users")
+        existing = users_ref.where("email", "==", email).limit(1).get()
+
+        if existing:
+            raise HTTPException(status_code=409, detail="Email already registered.")
+
+        uid = str(uuid.uuid4())
+
+        user_data = {
+            "uid": uid,
+            "username": username,
+            "email": email,
+            "password": password,  # <-- now hashed
+            "role": user_type,
+            "created_at": firestore.SERVER_TIMESTAMP
+        }
+
+        if user_type == "worker":
+            if not worker_type:
+                raise HTTPException(status_code=400, detail="Worker type required for workers.")
+            user_data["worker_type"] = worker_type
+
+        db.collection("users").document(uid).set(user_data)
+
+        return {
+            "message": "Registration successful",
+            "uid": uid,
+            "user_type": user_type,
+            "username": username
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/login")
