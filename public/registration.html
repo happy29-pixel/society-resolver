@@ -174,7 +174,7 @@
       const payload = { username, email, password, user_type, worker_type };
 
       try {
-        const response = await fetch("http://127.0.0.1:8000/register", {
+        const response = await fetch("https://society-resolver.onrender.com/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)

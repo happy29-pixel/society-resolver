@@ -177,6 +177,7 @@
       appId: "YOUR_APP_ID"
     };
 
+
     // ✅ Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -187,7 +188,7 @@
       tbody.innerHTML = "<tr><td colspan='7' style='text-align:center;'>Loading...</td></tr>";
 
       try {
-        const res = await fetch("http://127.0.0.1:8000/complaints");
+        const res = await fetch("https://society-resolver.onrender.com/complaints");
         const data = await res.json();
         const complaints = data.complaints || [];
 
@@ -239,7 +240,7 @@
       };
       const worker_type = map[category] || null;
       const url =
-        "http://127.0.0.1:8000/workers" +
+        "https://society-resolver.onrender.com/workers" +
         (worker_type
           ? "?worker_type=" + encodeURIComponent(worker_type) + "&available=true"
           : "?available=true");
@@ -257,7 +258,7 @@
 
       const token = localStorage.getItem("idToken");
       const r2 = await fetch(
-        `http://127.0.0.1:8000/complaints/${cid}/assign?worker_id=${pick}`,
+        `https://society-resolver.onrender.com/complaints/${cid}/assign?worker_id=${pick}`,
         {
           method: "PUT",
           headers: {

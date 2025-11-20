@@ -370,7 +370,7 @@
       };
 
       try {
-        const res = await fetch("http://127.0.0.1:8000/complaints", {
+        const res = await fetch("https://society-resolver.onrender.com/complaints", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
@@ -397,7 +397,7 @@
       const USER_ID = "test-user"; // Replace with Firebase UID later
 
       try {
-        const res = await fetch(`http://127.0.0.1:8000/complaints?user_id=${USER_ID}`);
+        const res = await fetch(`https://society-resolver.onrender.com/complaints?user_id=${USER_ID}`);
         const data = await res.json();
 
         if (!res.ok) {

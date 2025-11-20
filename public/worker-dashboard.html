@@ -157,7 +157,7 @@
     tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Loading...</td></tr>`;
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/complaints");
+      const res = await fetch("https://society-resolver.onrender.com/complaints");
       const data = await res.json();
 
       if (!res.ok) {
@@ -210,7 +210,7 @@
 
     try {
       const res = await fetch(
-        `http://127.0.0.1:8000/complaints/${id}/status?status=${status}`,
+        `https://society-resolver.onrender.com/complaints/${id}/status?status=${status}`,
         {
           method: "PUT",
           headers: {

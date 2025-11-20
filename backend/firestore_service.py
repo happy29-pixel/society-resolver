@@ -112,6 +112,7 @@ class FirestoreService:
             return True
         return False
 
+
     def assign_worker_to_complaint(self, cid: str, worker_id: str) -> bool:
         comp_ref = self.db.collection("complaints").document(cid)
         if not comp_ref.get().exists:

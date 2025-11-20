@@ -19,3 +19,4 @@ getAnalytics(app);
 
 // Export app
 export default app;
+

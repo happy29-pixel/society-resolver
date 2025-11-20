@@ -9,8 +9,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from firebase_admin import credentials, initialize_app, firestore
 # Import your app-specific models and FirestoreService implementation
-from models import RegisterIn, ComplaintIn
-from firestore_service import FirestoreService
+from .models import RegisterIn, ComplaintIn
+from .firestore_service import FirestoreService
 
 # ---------- Firebase initialization ----------
 # Expecting the full JSON in this exact env var on Render:
