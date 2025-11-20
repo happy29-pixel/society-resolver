@@ -67,30 +67,62 @@ def root():
 def favicon():
     return ""
 
-@app.post("/register")
-def register(payload: RegisterIn):
+router = APIRouter()
+
+@router.post("/register")
+def register_user(data: dict):
     try:
-        user = fs.create_user(
-            username=payload.username,
-            email=payload.email,
-            password=payload.password,
-            user_type=getattr(payload, "user_type", "user"),
-            worker_type=getattr(payload, "worker_type", None),
-        )
-        return {"message": "User created", "uid": user["uid"]}
+        username = data.get("username")
+        email = data.get("email")
+        password = data.get("password")
+        user_type = data.get("user_type", "user")
+        worker_type = data.get("worker_type")
+
+        if not username or not email or not password:
+            raise HTTPException(status_code=400, detail="Username, email and password are required.")
+
+        users_ref = db.collection("users")
+        existing = users_ref.where("email", "==", email).limit(1).get()
+
+        if existing:
+            raise HTTPException(status_code=409, detail="Email already registered.")
+
+        uid = str(uuid.uuid4())
+
+        user_data = {
+            "uid": uid,
+            "username": username,
+            "email": email,
+            "password": password,  # <-- now hashed
+            "role": user_type,
+            "created_at": firestore.SERVER_TIMESTAMP
+        }
+
+        if user_type == "worker":
+            if not worker_type:
+                raise HTTPException(status_code=400, detail="Worker type required for workers.")
+            user_data["worker_type"] = worker_type
+
+        db.collection("users").document(uid).set(user_data)
+
+        return {
+            "message": "Registration successful",
+            "uid": uid,
+            "user_type": user_type,
+            "username": username
+        }
+
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-class LoginRequest(BaseModel):
-    email: str
-    password: str
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/login")
-def login_user(data: LoginRequest):  # <- use LoginRequest, not LoginIn
+@router.post("/login")
+def login_user(data: dict):
     try:
-        email = data.email.strip()
-        password = data.password.strip()
+        email = data.get("email")
+        password = data.get("password")
 
         if not email or not password:
             raise HTTPException(status_code=400, detail="Email and password required")
@@ -102,37 +134,34 @@ def login_user(data: LoginRequest):  # <- use LoginRequest, not LoginIn
         if not query:
             raise HTTPException(status_code=404, detail="User not found")
 
-        user_doc = query[0]
-        user_data = user_doc.to_dict()
+        user_data = query[0].to_dict()
 
         if not user_data:
             raise HTTPException(status_code=404, detail="User data missing")
 
-        # 🔐 Validate password (plain text)
-        if user_data.get("password") != password:
+        # 🔐 Validate hashed password
+        stored_password = user_data.get("password")
+        if password != stored_password:
             raise HTTPException(status_code=401, detail="Invalid password")
 
-        # 🔥 Generate a temporary token (replace with JWT later)
+        # 🔥 Generate a fake token (replace with JWT later)
         token = str(uuid.uuid4())
 
-        # ✅ Return user info
         return {
             "message": "Login successful",
             "token": token,
-            "user": {
-                "uid": user_doc.id,
-                "email": user_data.get("email"),
-                "username": user_data.get("username", ""),
-                "user_type": user_data.get("user_type", "user")
-            }
+            "uid": user_data.get("uid"),
+            "user_type": user_data.get("role", "user"),
+            "username": user_data.get("username", "User")
         }
 
     except HTTPException:
         raise
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+app.include_router(router, prefix="/auth")
 
 @app.post("/complaints")
 def create_complaint(complaint: ComplaintIn):
