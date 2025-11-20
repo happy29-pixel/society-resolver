@@ -1,5 +1,7 @@
 import os
 import pathlib
+import bcrypt
+from pathlib import Path
 from typing import Optional
 from fastapi import FastAPI, HTTPException, Depends, Header, APIRouter
 from fastapi.staticfiles import StaticFiles
@@ -47,8 +49,9 @@ def firebase_auth(authorization: Optional[str] = Header(None)):
         raise HTTPException(status_code=401, detail="Invalid Authorization header")
     id_token = parts[1]
     try:
-        verified = fs.verify_id_token(id_token)
-        return verified
+        return {"dummy": True}  # Remove auth until you implement JWT
+        # verified = fs.verify_id_token(id_token)
+        # return verified
     except Exception as e:
         raise HTTPException(status_code=401, detail=f"Invalid token: {e}")
 
@@ -64,6 +67,7 @@ def favicon():
 
 
 router = APIRouter()
+
 @router.post("/register")
 def register_user(data: dict):
     try:
@@ -73,53 +77,36 @@ def register_user(data: dict):
         user_type = data.get("user_type", "user")
         worker_type = data.get("worker_type")
 
-        # -------------------------
-        # Validate input fields
-        # -------------------------
         if not username or not email or not password:
-            raise HTTPException(
-                status_code=400,
-                detail="Username, email and password are required."
-            )
+            raise HTTPException(status_code=400, detail="Username, email and password are required.")
 
-        # -------------------------
-        # Check if email already exists
-        # -------------------------
         users_ref = db.collection("users")
         existing = users_ref.where("email", "==", email).limit(1).get()
 
         if existing:
-            raise HTTPException(
-                status_code=409,
-                detail="Email already registered."
-            )
+            raise HTTPException(status_code=409, detail="Email already registered.")
 
-        # -------------------------
-        # Create user document
-        # -------------------------
         uid = str(uuid.uuid4())
+
+        # 🔐 HASH PASSWORD here
+        hashed_pw = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
         user_data = {
             "uid": uid,
             "username": username,
             "email": email,
-            "password": password,   # (You can change to hashed later)
+            "password": hashed_pw,  # <-- now hashed
             "role": user_type,
             "created_at": firestore.SERVER_TIMESTAMP
         }
 
-        # Add worker type if role = worker
         if user_type == "worker":
             if not worker_type:
                 raise HTTPException(status_code=400, detail="Worker type required for workers.")
             user_data["worker_type"] = worker_type
 
-        # Save to Firestore
         db.collection("users").document(uid).set(user_data)
 
-        # -------------------------
-        # Response sent to frontend
-        # -------------------------
         return {
             "message": "Registration successful",
             "uid": uid,
@@ -130,8 +117,6 @@ def register_user(data: dict):
     except HTTPException:
         raise
     except Exception as e:
-        import traceback
-        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -178,7 +163,7 @@ def login_user(data: dict):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-
+app.include_router(router, prefix="/auth")
 
 @app.post("/complaints")
 def create_complaint(complaint: ComplaintIn):
