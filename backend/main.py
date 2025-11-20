@@ -63,13 +63,20 @@ def firebase_auth(authorization: Optional[str] = Header(None)):
 def root():
     return {"message": "API up"}
 
+@app.get("/favicon.ico")
+def favicon():
+    return ""
+
 @app.post("/register")
 def register(payload: RegisterIn):
     try:
+        # 🔐 Hash password before storing
+        hashed_password = bcrypt.hash(payload.password)
+
         user = fs.create_user(
             username=payload.username,
             email=payload.email,
-            password=payload.password,
+            password=hashed_password,  # store hashed password
             user_type=getattr(payload, "user_type", "user"),
             worker_type=getattr(payload, "worker_type", None),
         )
@@ -78,7 +85,6 @@ def register(payload: RegisterIn):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-# ✅ Pydantic model for request validation
 class LoginRequest(BaseModel):
     email: str
     password: str
@@ -105,12 +111,12 @@ def login_user(data: LoginRequest):
         if not user_data:
             raise HTTPException(status_code=404, detail="User data missing")
 
-        # 🔐 Validate password (plain text for now)
+        # 🔐 Verify hashed password
         stored_password = user_data.get("password")
-        if password != stored_password:
+        if not bcrypt.verify(password, stored_password):
             raise HTTPException(status_code=401, detail="Invalid password")
 
-        # 🔥 Generate a fake token (replace with JWT later)
+        # 🔥 Generate a token (replace with JWT later)
         token = str(uuid.uuid4())
 
         return {
