@@ -264,7 +264,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
 // ===== Firebase Setup =====
 const firebaseConfig = {
@@ -275,25 +275,21 @@ const firebaseConfig = {
   messagingSenderId: "YOUR_SENDER",
   appId: "YOUR_APPID"
 };
-
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
 // ===== TAB SWITCHING =====
 const tabs = document.querySelectorAll(".sidebar a");
 const sections = document.querySelectorAll(".tab");
-
 tabs.forEach(tab => {
   tab.addEventListener("click", () => {
     tabs.forEach(t => t.classList.remove("active"));
     sections.forEach(s => s.classList.remove("active"));
-
     tab.classList.add("active");
-    const id = tab.id.replace("Tab", "Section");
-    document.getElementById(id).classList.add("active");
+    document.getElementById(tab.id.replace("Tab", "Section")).classList.add("active");
 
-    if (tab.id === "statusTab") loadStatus();
-    if (tab.id === "historyTab") loadHistory();
+    if (tab.id === "statusTab") loadStatus(currentUid);
+    if (tab.id === "historyTab") loadHistory(currentUid);
   });
 });
 
@@ -301,55 +297,73 @@ tabs.forEach(tab => {
 document.getElementById("logoutBtn").onclick = async () => {
   await signOut(auth);
   localStorage.clear();
-  window.location.href = "login.html";
+  // window.location.href = "login.html";
 };
 
-// ===== SUBMIT COMPLAINT =====
-document.getElementById("complaintForm").onsubmit = async (e) => {
-  e.preventDefault();
+// ===== GLOBAL UID =====
+let currentUid = null;
 
-  const payload = {
-    user_id: auth.currentUser?.uid,
-    name: document.getElementById("name").value,
-    category: document.getElementById("category").value,
-    description: document.getElementById("description").value,
-    date: document.getElementById("date").value
-  };
-
-  try {
-    const res = await fetch("https://society-resolver.onrender.com/complaints", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-
-    if (!res.ok) throw new Error("Failed to submit complaint");
-
-    alert("Complaint Submitted Successfully!");
-    document.getElementById("complaintForm").reset();
-
-    // Refresh status table automatically if visible
-    if (document.getElementById("statusSection").classList.contains("active")) {
-      loadStatus();
-    }
-  } catch (err) {
-    console.error("Error submitting complaint:", err);
-    alert("Failed to submit complaint. Please try again.");
+// ===== AUTH CHECK =====
+onAuthStateChanged(auth, (user) => {
+  if (!user) {
+    // Not logged in → redirect
+    // window.location.href = "login.html";
+    return;
   }
-};
+
+  // User is logged in
+  currentUid = user.uid;
+
+  // Load tables
+  loadStatus(currentUid);
+  loadHistory(currentUid);
+
+  // Enable complaint submission
+  const form = document.getElementById("complaintForm");
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    const payload = {
+      user_id: currentUid,
+      name: document.getElementById("name").value,
+      category: document.getElementById("category").value,
+      description: document.getElementById("description").value,
+      date: document.getElementById("date").value
+    };
+
+    try {
+      const res = await fetch("https://society-resolver.onrender.com/complaints", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error("Failed to submit complaint");
+
+      const data = await res.json();
+      alert(`Complaint Submitted! ID: ${data.id || "-"}`);
+      form.reset();
+
+      // Refresh status table if visible
+      if (document.getElementById("statusSection").classList.contains("active")) {
+        loadStatus(currentUid);
+      }
+    } catch (err) {
+      console.error("Error submitting complaint:", err);
+      alert("Failed to submit complaint. Try again.");
+    }
+  };
+});
 
 // ===== LOAD STATUS =====
-async function loadStatus() {
-  const uid = auth.currentUser?.uid;
+async function loadStatus(uid) {
   const tbody = document.getElementById("statusTableBody");
   tbody.innerHTML = "<tr><td colspan='5'>Loading...</td></tr>";
 
   try {
     const res = await fetch(`https://society-resolver.onrender.com/complaints?user_id=${uid}`);
     const data = await res.json();
-
     const list = data.complaints || [];
-    if (list.length === 0) {
+
+    if (!list.length) {
       tbody.innerHTML = "<tr><td colspan='5'>No complaints found</td></tr>";
       return;
     }
@@ -370,17 +384,16 @@ async function loadStatus() {
 }
 
 // ===== LOAD HISTORY =====
-async function loadHistory() {
-  const uid = auth.currentUser?.uid;
+async function loadHistory(uid) {
   const tbody = document.getElementById("historyTableBody");
   tbody.innerHTML = "<tr><td colspan='5'>Loading...</td></tr>";
 
   try {
     const res = await fetch(`https://society-resolver.onrender.com/complaints?user_id=${uid}`);
     const data = await res.json();
-
     const list = data.complaints || [];
-    if (list.length === 0) {
+
+    if (!list.length) {
       tbody.innerHTML = "<tr><td colspan='5'>No complaint history</td></tr>";
       return;
     }
@@ -400,6 +413,10 @@ async function loadHistory() {
   }
 }
 </script>
+
+
+
+
 
 </body>
 </html>

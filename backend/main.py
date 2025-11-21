@@ -76,6 +76,9 @@ def register(payload: RegisterIn):
             worker_type=getattr(payload, "worker_type", None),
         )
         return {"message": "User created", "uid": user["uid"]}
+    except HTTPException as e:
+        if e.status_code == 422:
+            print("Unprocessable Content:", e.detail)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
