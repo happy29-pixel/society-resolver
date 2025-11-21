@@ -135,116 +135,97 @@
 
   </form>
 
-  <script type="module">
-    import { API_URL } from "./config.js";
+<script type="module">
+  import { API_URL } from "./config.js";
 
-    const msg = document.getElementById("message");
+  const msg = document.getElementById("message");
 
-    // 🔹 Check if passwords match
-    function checkPasswords() {
-      const pass = document.getElementById("password").value;
-      const confirm = document.getElementById("confirmPassword").value;
+  function checkPasswords() {
+    const pass = document.getElementById("password").value;
+    const confirm = document.getElementById("confirmPassword").value;
 
-      if (!pass || !confirm) {
-        msg.textContent = "Please fill out both password fields.";
-        msg.style.color = "red";
-        return false;
-      }
-
-      if (pass !== confirm) {
-        msg.textContent = "Passwords do not match!";
-        msg.style.color = "red";
-        return false;
-      }
-
-      msg.textContent = "Passwords match!";
-      msg.style.color = "green";
-      return true;
+    if (!pass || !confirm) {
+      msg.textContent = "Please fill out both password fields.";
+      msg.style.color = "red";
+      return false;
     }
 
-    // 🔹 Show worker type dropdown when selecting worker
-    document.querySelectorAll('input[name="role"]').forEach(radio => {
-      radio.addEventListener('change', (e) => {
-        document.getElementById("workerTypeWrap").style.display =
-          e.target.value === "worker" ? "block" : "none";
-      });
+    if (pass !== confirm) {
+      msg.textContent = "Passwords do not match!";
+      msg.style.color = "red";
+      return false;
+    }
+
+    msg.textContent = "Passwords match!";
+    msg.style.color = "green";
+    return true;
+  }
+
+  document.querySelectorAll('input[name="role"]').forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      document.getElementById("workerTypeWrap").style.display =
+        e.target.value === "worker" ? "block" : "none";
     });
+  });
 
-    // 🔹 Register user
-    document.getElementById("registerForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
+  document.getElementById("registerForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-      if (!checkPasswords()) return;
+    if (!checkPasswords()) return;
 
-      const username = document.getElementById("username").value.trim();
-      const email = document.getElementById("email").value.trim();
-      const password = document.getElementById("password").value.trim();
-      const user_type = document.querySelector('input[name="role"]:checked').value;
+    const username = document.getElementById("username").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
+    const user_type = document.querySelector('input[name="role"]:checked').value;
 
-      let worker_type = null;
-      if (user_type === "worker") {
-        worker_type = document.getElementById("worker_type").value;
-        if (!worker_type) {
-          alert("Please select worker type.");
-          return;
-        }
+    let worker_type = null;
+    if (user_type === "worker") {
+      worker_type = document.getElementById("worker_type").value;
+      if (!worker_type) {
+        alert("Please select worker type.");
+        return;
       }
+    }
 
-      const payload = { username, email, password, user_type, worker_type };
+    const payload = { username, email, password, user_type, worker_type };
 
-      try {
-        const res = await fetch(`${API_URL}/register`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          alert("Registration failed: " + (data.detail || JSON.stringify(data)));
-          return;
-        }
-
-        alert("Registration successful!");
-        window.location.href = "login.html";
-
-      } catch (error) {
-        console.error("Registration error:", error);
-        alert("Unable to connect to server. Is backend running?");
-      }
-
-
-
-      try {
-        const res = await fetch(`${API_URL}/register`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
+    try {
+      const res = await fetch(`${API_URL}/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
       });
 
-      let data;
+      let data = null;
       try {
-        data = await res.json();   // Try to read JSON
+        data = await res.json();
       } catch {
-        data = { detail: "Unknown error occurred" }; // Fallback if not JSON
+        data = { detail: "Server returned invalid response" };
       }
 
       if (!res.ok) {
-        alert("Registration failed: " + (data.detail || JSON.stringify(data)));
+        let detail = data.detail;
+
+        if (Array.isArray(detail)) {
+          detail = detail.map(d => d.msg).join(", ");
+        } else if (typeof detail !== "string") {
+          detail = JSON.stringify(detail);
+        }
+
+        alert("Registration failed: " + detail);
         return;
       }
 
       alert("Registration successful!");
       window.location.href = "login.html";
 
-      } catch (error) {
-        console.error("Registration error:", error);
-        alert("Unable to connect to server. Is backend running?");
-      }
+    } catch (error) {
+      console.error("Registration error:", error);
+      alert("Unable to connect to server.");
+    }
+  });
+</script>
 
-    });
-  </script>
 
 </body>
 </html>

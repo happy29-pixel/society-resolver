@@ -81,6 +81,11 @@
               default:
                 window.location.href = "user-dashboard.html";
             }
+            const res = await fetch(`${API_URL}/user-by-email?email=${email}`);
+            const user = await res.json();
+
+            localStorage.setItem("backend_uid", user.uid);
+
           } else {
             // If no Firestore data, just redirect to default dashboard
             window.location.href = "user-dashboard.html";

@@ -119,6 +119,23 @@ def assign_worker(cid: str, worker_id: str, user=Depends(firebase_auth)):
         raise HTTPException(status_code=400, detail="Assign failed")
     return {"id": cid, "assigned_to": worker_id}
 
+@app.get("/user-by-email")
+def get_user_by_email(email: str):
+    try:
+        users_ref = firestore.client().collection("users")
+        query = users_ref.where("email", "==", email).limit(1).stream()
+
+        for doc in query:
+            user_data = doc.to_dict()
+            user_data["uid"] = doc.id  # include Firestore document ID
+            return user_data
+
+        raise HTTPException(status_code=404, detail="User not found")
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ---------- Render: Port handling ----------
 if __name__ == "__main__":
     import uvicorn

@@ -306,13 +306,16 @@ let currentUid = null;
 // ===== AUTH CHECK =====
 onAuthStateChanged(auth, (user) => {
   if (!user) {
-    // Not logged in → redirect
-    // window.location.href = "login.html";
+    window.location.href = "login.html";
     return;
   }
 
-  // User is logged in
-  currentUid = user.uid;
+  currentUid = localStorage.getItem("backend_uid");
+  if (!currentUid) {
+    alert("Backend user ID missing! Login again.");
+    signOut(auth);
+    return;
+  }
 
   // Load tables
   loadStatus(currentUid);
