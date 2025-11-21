@@ -6,7 +6,6 @@
   <title>User Dashboard - Society Resolver</title>
 
   <style>
-    /* ===== Base Layout ===== */
     body {
       margin: 0;
       font-family: 'Poppins', sans-serif;
@@ -24,7 +23,6 @@
     header .logo {
       font-size: 22px;
       font-weight: bold;
-      letter-spacing: 1px;
     }
     .logout-btn {
       background-color: #e74c3c;
@@ -33,7 +31,6 @@
       padding: 10px 16px;
       border-radius: 6px;
       cursor: pointer;
-      font-weight: 600;
     }
 
     .dashboard {
@@ -41,31 +38,25 @@
       height: calc(100vh - 80px);
     }
 
-    /* ===== Sidebar ===== */
     .sidebar {
       width: 250px;
       background: #0056b3;
       color: white;
       padding: 25px;
     }
-    .sidebar ul {
-      list-style: none;
-      padding: 0;
-    }
+    .sidebar ul { list-style: none; padding: 0; }
     .sidebar a {
       display: block;
       color: white;
-      text-decoration: none;
       padding: 10px 0;
+      text-decoration: none;
       border-radius: 8px;
-      transition: background 0.3s;
     }
-    .sidebar a:hover,
-    .sidebar a.active {
+    .sidebar a.active,
+    .sidebar a:hover {
       background: #007bff;
     }
 
-    /* ===== Content Area ===== */
     .content {
       flex: 1;
       padding: 30px;
@@ -73,38 +64,24 @@
       overflow-y: auto;
       border-top-left-radius: 20px;
     }
+
     .tab { display: none; }
     .tab.active { display: block; }
 
-    footer {
-      text-align: center;
-      background: #007bff;
-      color: rgb(231, 232, 229);
-      padding: 10px;
-    }
-
-    /* ===== Form Section ===== */
     .complaint-form {
       max-width: 600px;
       margin: 0 auto;
-      background-color: white;
+      background: white;
       padding: 30px;
       border-radius: 10px;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
 
-    label {
-      display: block;
-      margin-top: 15px;
-      font-weight: 500;
-    }
+    label { display: block; margin-top: 15px; font-weight: 500; }
     input, select, textarea {
-      width: 100%;
-      padding: 10px;
-      margin-top: 5px;
-      border-radius: 5px;
-      border: 1px solid #ccc;
+      width: 100%; padding: 10px; margin-top: 5px; border-radius: 5px; border: 1px solid #ccc;
     }
+
     .button {
       margin-top: 20px;
       padding: 12px 20px;
@@ -115,15 +92,11 @@
       font-size: 16px;
       cursor: pointer;
     }
-    .button:hover {
-      background-color: #0059b3;
-    }
 
-    /* ===== Tables ===== */
     table {
       width: 100%;
       border-collapse: collapse;
-      background-color: white;
+      background: white;
       margin-top: 20px;
       border-radius: 10px;
       overflow: hidden;
@@ -134,30 +107,11 @@
       border: 1px solid #ccc;
       text-align: center;
     }
-    th {
-      background-color: #003366;
-      color: white;
-    }
-    tr:nth-child(even) {
-      background-color: #f9f9f9;
-    }
+    th { background: #003366; color: white; }
 
-    /* Status colors */
     .status-open { color: #d9534f; font-weight: bold; }
     .status-in_progress { color: #f0ad4e; font-weight: bold; }
     .status-resolved { color: #5cb85c; font-weight: bold; }
-
-    .refresh-btn {
-      margin: 20px auto;
-      padding: 10px 20px;
-      background-color: #003366;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 16px;
-      display: block;
-    }
   </style>
 </head>
 
@@ -170,7 +124,6 @@
 
 <main class="dashboard">
 
-  <!-- ========== SIDEBAR ========== -->
   <aside class="sidebar">
     <ul>
       <li><a href="#" id="formTab" class="active">📝 Register Complaint</a></li>
@@ -181,7 +134,6 @@
 
   <section class="content">
 
-    <!-- ========== REGISTER COMPLAINT ========== -->
     <div id="formSection" class="tab active">
       <div class="complaint-form">
         <h2>Submit Your Complaint</h2>
@@ -211,76 +163,52 @@
       </div>
     </div>
 
-    <!-- ========== COMPLAINT STATUS (LIVE) ========== -->
     <div id="statusSection" class="tab">
       <h2>Complaint Status</h2>
-
       <table>
         <thead>
-          <tr>
-            <th>ID</th>
-            <th>Category</th>
-            <th>Description</th>
-            <th>Status</th>
-            <th>Date</th>
-          </tr>
+          <tr><th>ID</th><th>Category</th><th>Description</th><th>Status</th><th>Date</th></tr>
         </thead>
-        <tbody id="statusTableBody">
-          <tr><td colspan="5">Loading...</td></tr>
-        </tbody>
+        <tbody id="statusTableBody"></tbody>
       </table>
-
-      <button class="refresh-btn" onclick="loadStatus()">🔄 Refresh</button>
     </div>
 
-    <!-- ========== COMPLAINT HISTORY ========== -->
     <div id="historySection" class="tab">
       <h2>Complaint History</h2>
-
       <table>
         <thead>
-          <tr>
-            <th>ID</th>
-            <th>Category</th>
-            <th>Description</th>
-            <th>Status</th>
-            <th>Date</th>
-          </tr>
+          <tr><th>ID</th><th>Category</th><th>Description</th><th>Status</th><th>Date</th></tr>
         </thead>
-        <tbody id="historyTableBody">
-          <tr><td colspan="5">Loading...</td></tr>
-        </tbody>
+        <tbody id="historyTableBody"></tbody>
       </table>
-
-      <button class="refresh-btn" onclick="loadHistory()">🔄 Refresh</button>
     </div>
 
   </section>
 </main>
 
-<footer>
-  <p>&copy; 2025 Society Resolver | All rights reserved.</p>
-</footer>
-
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 
-// ===== Firebase Setup =====
 const firebaseConfig = {
-  apiKey: "YOUR_KEY",
-  authDomain: "YOUR_AUTH",
-  projectId: "YOUR_PROJECT",
-  storageBucket: "YOUR_BUCKET",
-  messagingSenderId: "YOUR_SENDER",
-  appId: "YOUR_APPID"
+  apiKey: "AIzaSyC2pKa8cJJW_vVKw1kwhsiQS3k02eYhr4o",
+  authDomain: "society-resolver1.firebaseapp.com",
+  projectId: "society-resolver1",
+  storageBucket: "society-resolver1.appspot.com",
+  messagingSenderId: "140793535075",
+  appId: "1:140793535075:web:6119a1f751f05afccaf656",
+  measurementId: "G-2N2QM0T53G"
 };
+
+const API_URL = "https://society-resolver.onrender.com";
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-// ===== TAB SWITCHING =====
+// -------------------- TAB SWITCHING --------------------
 const tabs = document.querySelectorAll(".sidebar a");
 const sections = document.querySelectorAll(".tab");
+
 tabs.forEach(tab => {
   tab.addEventListener("click", () => {
     tabs.forEach(t => t.classList.remove("active"));
@@ -293,38 +221,44 @@ tabs.forEach(tab => {
   });
 });
 
-// ===== LOGOUT =====
+// -------------------- LOGOUT --------------------
 document.getElementById("logoutBtn").onclick = async () => {
   await signOut(auth);
   localStorage.clear();
-  // window.location.href = "login.html";
+  window.location.href = "login.html";
 };
 
-// ===== GLOBAL UID =====
+// -------------------- GLOBAL UID --------------------
 let currentUid = null;
 
-// ===== AUTH CHECK =====
+// -------------------- AUTH CHECK --------------------
 onAuthStateChanged(auth, (user) => {
   if (!user) {
+    console.log("User not logged in — redirecting");
     window.location.href = "login.html";
     return;
   }
 
   currentUid = localStorage.getItem("backend_uid");
+
   if (!currentUid) {
-    alert("Backend user ID missing! Login again.");
+    alert("Backend user ID missing! Please log in again.");
     signOut(auth);
     return;
   }
 
-  // Load tables
   loadStatus(currentUid);
   loadHistory(currentUid);
+  enableComplaintForm();
+});
 
-  // Enable complaint submission
+// -------------------- COMPLAINT SUBMISSION --------------------
+function enableComplaintForm() {
   const form = document.getElementById("complaintForm");
+
   form.onsubmit = async (e) => {
     e.preventDefault();
+
     const payload = {
       user_id: currentUid,
       name: document.getElementById("name").value,
@@ -334,44 +268,50 @@ onAuthStateChanged(auth, (user) => {
     };
 
     try {
-      const res = await fetch("https://society-resolver.onrender.com/complaints", {
+      const res = await fetch(`${API_URL}/complaints`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
+
       if (!res.ok) throw new Error("Failed to submit complaint");
 
-      const data = await res.json();
-      alert(`Complaint Submitted! ID: ${data.id || "-"}`);
+      alert("Complaint submitted successfully!");
       form.reset();
+      loadStatus(currentUid);
 
-      // Refresh status table if visible
-      if (document.getElementById("statusSection").classList.contains("active")) {
-        loadStatus(currentUid);
-      }
     } catch (err) {
-      console.error("Error submitting complaint:", err);
-      alert("Failed to submit complaint. Try again.");
+      console.error("Error:", err);
+      alert("Failed to submit complaint.");
     }
   };
-});
+}
 
-// ===== LOAD STATUS =====
+// -------------------- LOAD STATUS --------------------
 async function loadStatus(uid) {
   const tbody = document.getElementById("statusTableBody");
-  tbody.innerHTML = "<tr><td colspan='5'>Loading...</td></tr>";
+  tbody.innerHTML = `<tr><td colspan="5">Loading...</td></tr>`;
 
   try {
+        // ✅ Backend request
     const res = await fetch(`https://society-resolver.onrender.com/complaints?user_id=${uid}`);
     const data = await res.json();
+
     const list = data.complaints || [];
 
-    if (!list.length) {
-      tbody.innerHTML = "<tr><td colspan='5'>No complaints found</td></tr>";
+    // ✅ Only show complaints NOT resolved
+    const filtered = list.filter(c =>
+      c.status.toLowerCase() === "open" ||
+      c.status.toLowerCase() === "in_progress" ||
+      c.status.toLowerCase() === "in progress"
+    );
+
+    if (!filtered.length) {
+      tbody.innerHTML = "<tr><td colspan='5'>No active complaints</td></tr>";
       return;
     }
 
-    tbody.innerHTML = list.reverse().map(c => `
+    tbody.innerHTML = filtered.reverse().map(c => `
       <tr>
         <td>${c.id || "-"}</td>
         <td>${c.category}</td>
@@ -381,23 +321,23 @@ async function loadStatus(uid) {
       </tr>
     `).join("");
   } catch (err) {
-    console.error("Error loading status:", err);
-    tbody.innerHTML = "<tr><td colspan='5'>Error loading complaints</td></tr>";
+    console.error(err);
+    tbody.innerHTML = `<tr><td colspan="5">Error loading complaints</td></tr>`;
   }
 }
 
-// ===== LOAD HISTORY =====
+// -------------------- LOAD HISTORY --------------------
 async function loadHistory(uid) {
   const tbody = document.getElementById("historyTableBody");
-  tbody.innerHTML = "<tr><td colspan='5'>Loading...</td></tr>";
+  tbody.innerHTML = `<tr><td colspan="5">Loading...</td></tr>`;
 
   try {
-    const res = await fetch(`https://society-resolver.onrender.com/complaints?user_id=${uid}`);
+    const res = await fetch(`${API_URL}/complaints?user_id=${uid}`);
     const data = await res.json();
     const list = data.complaints || [];
 
     if (!list.length) {
-      tbody.innerHTML = "<tr><td colspan='5'>No complaint history</td></tr>";
+      tbody.innerHTML = `<tr><td colspan="5">No complaint history</td></tr>`;
       return;
     }
 
@@ -410,16 +350,13 @@ async function loadHistory(uid) {
         <td>${c.date}</td>
       </tr>
     `).join("");
+
   } catch (err) {
-    console.error("Error loading history:", err);
-    tbody.innerHTML = "<tr><td colspan='5'>Error loading history</td></tr>";
+    console.error(err);
+    tbody.innerHTML = `<tr><td colspan="5">Error loading history</td></tr>`;
   }
 }
 </script>
-
-
-
-
 
 </body>
 </html>

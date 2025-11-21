@@ -20,86 +20,102 @@
     <p id="errorMsg" style="color:red;"></p>
   </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-    // 🔹 Firebase Config
-    const firebaseConfig = {
-      apiKey: "AIzaSyC2pKa8cJJW_vVKw1kwhsiQS3k02eYhr4o",
-      authDomain: "society-resolver1.firebaseapp.com",
-      projectId: "society-resolver1",
-      storageBucket: "society-resolver1.appspot.com",
-      messagingSenderId: "140793535075",
-      appId: "1:140793535075:web:6119a1f751f05afccaf656",
-      measurementId: "G-2N2QM0T53G"
-    };
+const API_URL = "https://society-resolver.onrender.com";
 
-    // 🔹 Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+// -------------------------
+// Firebase Configuration
+// -------------------------
+const firebaseConfig = {
+  apiKey: "AIzaSyC2pKa8cJJW_vVKw1kwhsiQS3k02eYhr4o",
+  authDomain: "society-resolver1.firebaseapp.com",
+  projectId: "society-resolver1",
+  storageBucket: "society-resolver1.appspot.com",
+  messagingSenderId: "140793535075",
+  appId: "1:140793535075:web:6119a1f751f05afccaf656",
+  measurementId: "G-2N2QM0T53G"
+};
 
-    const loginForm = document.getElementById("loginForm");
-    const errorMsg = document.getElementById("errorMsg");
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-    loginForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      errorMsg.textContent = "";
+const loginForm = document.getElementById("loginForm");
+const errorMsg = document.getElementById("errorMsg");
 
-      const email = document.getElementById("email").value.trim();
-      const password = document.getElementById("password").value.trim();
+// -------------------------
+// LOGIN HANDLER
+// -------------------------
+loginForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  errorMsg.textContent = "";
 
-      try {
-        // 🔹 Authenticate user
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value.trim();
 
-        // 🔹 Get ID token (optional)
-        const idToken = await user.getIdToken();
-        localStorage.setItem("idToken", idToken);
-        localStorage.setItem("uid", user.uid);
+  try {
+    // -------------------------
+    // 1️⃣ Firebase Login
+    // -------------------------
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
 
-        // 🔹 Optional: Fetch user data from Firestore
-        try {
-          const userDocRef = doc(db, "users", user.uid);
-          const userDoc = await getDoc(userDocRef);
-          if (userDoc.exists()) {
-            const data = userDoc.data();
-            localStorage.setItem("username", data.username || "");
-            localStorage.setItem("user_type", data.user_type || "user");
+    // Save Firebase UID + Token
+    localStorage.setItem("uid", user.uid);
+    localStorage.setItem("idToken", await user.getIdToken());
 
-            // Redirect based on user_type
-            switch(data.user_type) {
-              case "admin":
-                window.location.href = "admin-dashboard.html";
-                break;
-              case "worker":
-                window.location.href = "worker-dashboard.html";
-                break;
-              default:
-                window.location.href = "user-dashboard.html";
-            }
-            const res = await fetch(`${API_URL}/user-by-email?email=${email}`);
-            const user = await res.json();
+    // -------------------------
+    // 2️⃣ Fetch Backend Firestore UID by Email
+    // -------------------------
+    const res = await fetch(`${API_URL}/user-by-email?email=${email}`);
+    const backendUser = await res.json();
 
-            localStorage.setItem("backend_uid", user.uid);
+    if (!backendUser.uid) {
+      alert("Backend user not found!");
+      return;
+    }
 
-          } else {
-            // If no Firestore data, just redirect to default dashboard
-            window.location.href = "user-dashboard.html";
-          }
-        } catch (firestoreError) {
-          console.warn("Firestore error:", firestoreError.message);
-          window.location.href = "user-dashboard.html";
-        }
+    localStorage.setItem("backend_uid", backendUser.uid);
 
-      } catch (error) {
-        console.error("Login failed:", error);
-        errorMsg.textContent = "Login failed: " + error.message;
+    // -------------------------
+    // 3️⃣ Fetch User Type from Firestore
+    // -------------------------
+    let user_type = "user"; // default
+
+    try {
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+
+      if (userDoc.exists()) {
+        const data = userDoc.data();
+        user_type = data.user_type || "user";
+        localStorage.setItem("username", data.username || "");
+        localStorage.setItem("user_type", user_type);
       }
-    });
-  </script>
+    } catch (err) {
+      console.warn("Firestore error:", err.message);
+    }
+
+    // -------------------------
+    // 4️⃣ Redirect Based on User Type
+    // -------------------------
+    if (user_type === "admin") {
+      window.location.href = "admin-dashboard.html";
+    } else if (user_type === "worker") {
+      window.location.href = "worker-dashboard.html";
+    } else {
+      window.location.href = "user-dashboard.html";
+    }
+
+  } catch (error) {
+    console.error("Login failed:", error);
+    errorMsg.textContent = "Login failed: " + error.message;
+  }
+});
+</script>
+
 </body>
 </html>
