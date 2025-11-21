@@ -213,6 +213,36 @@
         console.error("Registration error:", error);
         alert("Unable to connect to server. Is backend running?");
       }
+
+
+
+      try {
+        const res = await fetch(`${API_URL}/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+      });
+
+      let data;
+      try {
+        data = await res.json();   // Try to read JSON
+      } catch {
+        data = { detail: "Unknown error occurred" }; // Fallback if not JSON
+      }
+
+      if (!res.ok) {
+        alert("Registration failed: " + (data.detail || JSON.stringify(data)));
+        return;
+      }
+
+      alert("Registration successful!");
+      window.location.href = "login.html";
+
+      } catch (error) {
+        console.error("Registration error:", error);
+        alert("Unable to connect to server. Is backend running?");
+      }
+
     });
   </script>
 

@@ -65,6 +65,8 @@ def root():
 def favicon():
     return ""
 
+from fastapi import HTTPException
+
 @app.post("/register")
 def register(payload: RegisterIn):
     try:
@@ -76,10 +78,13 @@ def register(payload: RegisterIn):
             worker_type=getattr(payload, "worker_type", None),
         )
         return {"message": "User created", "uid": user["uid"]}
+
     except HTTPException as e:
-        if e.status_code == 422:
-            print("Unprocessable Content:", e.detail)
+        # Re-raise all HTTPExceptions (422, 400, etc.)
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+
     except Exception as e:
+        # Unknown backend error
         raise HTTPException(status_code=400, detail=str(e))
 
 
