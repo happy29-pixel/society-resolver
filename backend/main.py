@@ -54,7 +54,6 @@ def firebase_auth(authorization: Optional[str] = Header(None)):
         # return verified
     except Exception as e:
         raise HTTPException(status_code=401, detail=f"Invalid token: {e}")
-
 # ---------- Routes ----------
 @app.get("/")
 def root():
